@@ -5,15 +5,19 @@ time = 0
 owner = nil;
 
 
-centerX = centerX or 50
-centerY = centerY or 50
+centerX = 0
+centerY = 0
+
+radius = radius or 122
 
 function onCreate( ctx )
 	owner = ctx;
 	print("OnCreate:: ", ctx)
 
-	owner.position.x = centerX
-	owner.position.y = centerY
+	centerX = owner.position.x
+	centerY = owner.position.y
+
+	print("Copied centerX/Y = ", centerX, centerY);
 end
 
 function update(dt)
@@ -28,7 +32,7 @@ function update(dt)
 		owner:colorize(red, green, blue)
 		]]
 
-		owner.position.x = math.cos(time) * 122 + centerX
-		owner.position.y = math.sin(time) * 122 + centerY
+		owner.position.x = math.cos(time) * radius + centerX
+		owner.position.y = math.sin(time) * radius + centerY
 	end
 end

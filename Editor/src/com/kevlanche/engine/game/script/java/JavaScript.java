@@ -70,7 +70,7 @@ public abstract class JavaScript implements Script {
 
 		protected int bindInt(ScriptVariable var, IntAccessor acc) {
 			mVars.add(new BoundVar(var, acc));
-			return toInt(var.getDefaultValue());
+			return toInt(JavaScript.this.get(var));
 		}
 
 		@Override
@@ -85,6 +85,15 @@ public abstract class JavaScript implements Script {
 			return "0";
 		}
 
+		@Override
+		public void reset(ScriptVariable var) {
+			for (BoundVar bv : mVars) {
+				if (bv.var == var) {
+					bv.accessor.setValue(JavaScript.this.get(var));
+				}
+			}
+		}
+		
 		@Override
 		public Script getSource() {
 			return JavaScript.this;

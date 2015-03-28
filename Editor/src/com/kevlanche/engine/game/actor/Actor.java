@@ -34,7 +34,7 @@ public class Actor extends BaseActor {
 	public class PositionScript extends JavaScript {
 
 		private final ScriptVariable x = new IntVariable("x", 0);
-		private final ScriptVariable y = new IntVariable("x", 0);
+		private final ScriptVariable y = new IntVariable("y", 0);
 
 		Map<ScriptVariable, Object> values = new HashMap<>();
 

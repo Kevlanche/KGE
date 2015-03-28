@@ -16,6 +16,7 @@ import com.kevlanche.engine.editor.panels.CenterPanel;
 import com.kevlanche.engine.editor.panels.LeftPanel;
 import com.kevlanche.engine.editor.panels.RightPanel;
 import com.kevlanche.engine.editor.panels.TopPanel;
+import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Actor;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.lua.LuaScript;
@@ -58,13 +59,17 @@ public class Editor {
 		final Actor actor = new Actor();
 		actor.addScript(new ClassPathScript("/lua/test.lua"));
 
+		final GameState state = new GameState();
+		state.addActor(actor);
+		state.setCurrentSelection(actor);
+		
 		final JPanel content = new JPanel();
 		content.setBackground(Color.DARK_GRAY);
 		content.setLayout(new BorderLayout());
 		content.add(new LeftPanel(), BorderLayout.WEST);
-		content.add(new TopPanel(actor), BorderLayout.NORTH);
+		content.add(new TopPanel(state), BorderLayout.NORTH);
 		content.add(new CenterPanel(actor), BorderLayout.CENTER);
-		content.add(new RightPanel(actor), BorderLayout.EAST);
+		content.add(new RightPanel(state), BorderLayout.EAST);
 		frame.setContentPane(content);
 
 		frame.setSize(800, 600);

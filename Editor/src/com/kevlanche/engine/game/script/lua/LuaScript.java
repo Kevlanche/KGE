@@ -52,36 +52,40 @@ public class LuaScript implements Script {
 			Instance ret = SimpleScriptLoader.load(this, ctx, mSrc);
 			for (ScriptVariable var : getVariables()) {
 
-				final Object val = mCustomValues.getOrDefault(var.getName(),
-						var.getDefaultValue());
-
-				System.out.println("Setting " + var.getName() + " = " + val);
-
-				switch (var.getType()) {
-				case INTEGER:
-					try {
-						if (val instanceof Integer) {
-							ret.mGlobals.set(var.getName(), (Integer) val);
-						} else {
-							ret.mGlobals.set(var.getName(),
-									Integer.parseInt(val.toString()));
-						}
-					} catch (RuntimeException e) {
-						ret.mGlobals.set(var.getName(), Integer.parseInt(var
-								.getDefaultValue().toString()));
-					}
-
-					break;
-				case STRING:
-					ret.mGlobals.set(var.getName(),
-							LuaValue.valueOf(val.toString()));
-					break;
-				}
+				set(ret, var);
 			}
 			return ret;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+
+	private void set(Instance ret, ScriptVariable var) {
+		final Object val = mCustomValues.getOrDefault(var.getName(),
+				var.getDefaultValue());
+
+		System.out.println("Setting " + var.getName() + " = " + val);
+
+		switch (var.getType()) {
+		case INTEGER:
+			try {
+				if (val instanceof Integer) {
+					ret.mGlobals.set(var.getName(), (Integer) val);
+				} else {
+					ret.mGlobals.set(var.getName(),
+							Integer.parseInt(val.toString()));
+				}
+			} catch (RuntimeException e) {
+				ret.mGlobals.set(var.getName(), Integer.parseInt(var
+						.getDefaultValue().toString()));
+			}
+
+			break;
+		case STRING:
+			ret.mGlobals.set(var.getName(),
+					LuaValue.valueOf(val.toString()));
+			break;
 		}
 	}
 
@@ -157,6 +161,11 @@ public class LuaScript implements Script {
 			} catch (LuaError e) {
 				e.printStackTrace();
 			}
+		}
+
+		@Override
+		public void reset(ScriptVariable var) {
+			mParent.set(this, var);		
 		}
 	}
 }
