@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import com.kevlanche.engine.editor.panels.CenterPanel;
 import com.kevlanche.engine.editor.panels.LeftPanel;
@@ -48,6 +49,21 @@ public class Editor {
 	}
 
 	public static void main(String[] args) throws IOException {
+
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					new Editor();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	public Editor() throws Exception {
 		final JFrame frame = new JFrame("Kevlanche Engine Editor v."
 				+ Integer.MIN_VALUE);
 
@@ -56,22 +72,29 @@ public class Editor {
 		sc.add(new ClassPathScript("/lua/test.lua"));
 		sc.add(new ClassPathScript("/lua/transform.lua"));
 
-		final Actor actor = new Actor();
-		actor.addScript(new ClassPathScript("/lua/test.lua"));
+		final Actor a1 = new Actor();
+		a1.addScript(new ClassPathScript("/lua/test.lua"));
+
+		final Actor a2 = new Actor();
+		a2.position.x = 5;
+		a2.position.y = 5;
+		a2.position.saveState();
 
 		final GameState state = new GameState();
-		state.addActor(actor);
-		state.setCurrentSelection(actor);
-		
+		state.addActor(a1);
+		state.addActor(a2);
+		state.setCurrentSelection(a1);
+
 		final JPanel content = new JPanel();
 		content.setBackground(Color.DARK_GRAY);
 		content.setLayout(new BorderLayout());
 		content.add(new LeftPanel(), BorderLayout.WEST);
 		content.add(new TopPanel(state), BorderLayout.NORTH);
-		content.add(new CenterPanel(actor), BorderLayout.CENTER);
+		content.add(new CenterPanel(state), BorderLayout.CENTER);
 		content.add(new RightPanel(state), BorderLayout.EAST);
 		frame.setContentPane(content);
 
+		frame.setLocationByPlatform(true);
 		frame.setSize(800, 600);
 		frame.addWindowListener(new WindowAdapter() {
 
@@ -81,6 +104,5 @@ public class Editor {
 			}
 		});
 		frame.setVisible(true);
-
 	}
 }

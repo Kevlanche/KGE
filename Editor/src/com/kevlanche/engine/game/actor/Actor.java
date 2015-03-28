@@ -1,20 +1,15 @@
 package com.kevlanche.engine.game.actor;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.kevlanche.engine.game.actor.Actor.PositionScript.Position;
+import com.kevlanche.engine.game.actor.Actor.SizeScript.Size;
 import com.kevlanche.engine.game.script.ScriptInstance;
-import com.kevlanche.engine.game.script.ScriptOwner;
 import com.kevlanche.engine.game.script.java.JavaScript;
-import com.kevlanche.engine.game.script.var.IntVariable;
 import com.kevlanche.engine.game.script.var.ScriptVariable;
 
 public class Actor extends BaseActor {
 
 	public Position position;
+	public Size size;
 
 	public Actor() {
 		addScript(new PositionScript(), new InstanceAcessor() {
@@ -29,64 +24,51 @@ public class Actor extends BaseActor {
 				return position;
 			}
 		});
+		addScript(new SizeScript(), new InstanceAcessor() {
+
+			@Override
+			public void set(ScriptInstance value) {
+				size = (Size) value;
+			}
+
+			@Override
+			public ScriptInstance getValue() {
+				return size;
+			}
+		});
 	}
 
 	public class PositionScript extends JavaScript {
 
-		private final ScriptVariable x = new IntVariable("x", 0);
-		private final ScriptVariable y = new IntVariable("y", 0);
+		public PositionScript() {
+			super(Position.class);
 
-		Map<ScriptVariable, Object> values = new HashMap<>();
-
-		@Override
-		public List<ScriptVariable> getVariables() {
-			return Arrays.asList(x, y);
-		}
-
-		@Override
-		public void set(ScriptVariable variable, Object value) {
-			values.put(variable, value);
-		}
-
-		@Override
-		public Object get(ScriptVariable variable) {
-			Object setVar = values.get(variable);
-			return setVar == null ? variable.getDefaultValue() : setVar;
-		}
-
-		@Override
-		public Position createInstance(ScriptOwner context) {
-			Position ret = new Position();
-
-			return ret;
+			registerVar("x", 0);
+			registerVar("y", 0);
 		}
 
 		public class Position extends Instance {
-			public int x = bindInt(PositionScript.this.x, new IntAccessor() {
+			public int x, y;
 
-				@Override
-				public Object getValue() {
-					return x;
-				}
+			public Position() {
+			}
+		}
+	}
 
-				@Override
-				protected void setInt(Integer value) {
-					x = value;
-				}
-			});
-			public int y = bindInt(PositionScript.this.y, new IntAccessor() {
+	public class SizeScript extends JavaScript {
 
-				@Override
-				public Object getValue() {
-					return y;
-				}
+		public SizeScript() {
+			super(Size.class);
 
-				@Override
-				protected void setInt(Integer value) {
-					y = value;
-				}
-			});
+			registerVar("width", 4);
+			registerVar("height", 4);
 		}
 
+		public class Size extends Instance {
+			public int width, height;
+
+			public Size() {
+			}
+		}
 	}
 }

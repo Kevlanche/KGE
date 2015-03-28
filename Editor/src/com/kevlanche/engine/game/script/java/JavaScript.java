@@ -1,10 +1,17 @@
 package com.kevlanche.engine.game.script.java;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.kevlanche.engine.game.script.BaseScriptInstance;
 import com.kevlanche.engine.game.script.Script;
+import com.kevlanche.engine.game.script.ScriptInstance;
+import com.kevlanche.engine.game.script.ScriptOwner;
+import com.kevlanche.engine.game.script.var.IntVariable;
 import com.kevlanche.engine.game.script.var.ScriptVariable;
 
 public abstract class JavaScript implements Script {
@@ -20,13 +27,95 @@ public abstract class JavaScript implements Script {
 
 	}
 
-	public JavaScript() {
+	private final List<BoundVar> mVars = new ArrayList<>();
+	Map<ScriptVariable, Object> values = new HashMap<>();
+	private final Class<? extends ScriptInstance> mInstanceClass;
+
+	public JavaScript(Class<? extends ScriptInstance> instanceClass) {
+		mInstanceClass = instanceClass;
+	}
+
+	@Override
+	public List<ScriptVariable> getVariables() {
+		final List<ScriptVariable> ret = new ArrayList<>();
+		for (BoundVar bv : mVars) {
+			ret.add(bv.var);
+		}
+		return ret;
+	}
+
+	@Override
+	public void set(ScriptVariable variable, Object value) {
+		values.put(variable, value);
+	}
+
+	@Override
+	public Object get(ScriptVariable variable) {
+		Object setVar = values.get(variable);
+		return setVar == null ? variable.getDefaultValue() : setVar;
+	}
+
+	@Override
+	public ScriptInstance createInstance(ScriptOwner context) {
+		try {
+			return mInstanceClass.getDeclaredConstructor(getClass())
+					.newInstance(this);
+		} catch (InstantiationException | IllegalAccessException
+				| IllegalArgumentException | InvocationTargetException
+				| NoSuchMethodException | SecurityException e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException();
+		}
+	}
+
+	protected ScriptVariable registerVar(String name, Object defaultValue) {
+		try {
+			final Field field = mInstanceClass.getDeclaredField(name);
+			field.setAccessible(true);
+
+			final String typeName = field.getType().getName();
+			final Acessor ac = new Acessor() {
+
+				@Override
+				public void setValue(Object target, Object value) {
+					try {
+						field.set(target, value);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+						throw new IllegalArgumentException(e);
+					}
+				}
+
+				@Override
+				public Object getValue(Object target) {
+					try {
+						return field.get(target);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						e.printStackTrace();
+						throw new IllegalArgumentException(e);
+					}
+				}
+			};
+			final ScriptVariable var;
+			if (typeName.equals("int")) {
+				var = new IntVariable(name, toInt(defaultValue));
+			} else {
+				throw new IllegalArgumentException("Illegal type \"" + typeName
+						+ "\" on field \"" + name + "\"");
+			}
+			final BoundVar bv = new BoundVar(var, ac);
+			mVars.add(bv);
+			return bv.var;
+		} catch (NoSuchFieldException | SecurityException e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException(e);
+		}
 	}
 
 	protected interface Acessor {
-		void setValue(Object value);
+		void setValue(Object target, Object value);
 
-		Object getValue();
+		Object getValue(Object target);
 	}
 
 	private int toInt(Object value) {
@@ -43,41 +132,24 @@ public abstract class JavaScript implements Script {
 
 	}
 
-	protected abstract class IntAccessor implements Acessor {
-
-		@Override
-		public void setValue(Object value) {
-			setInt(toInt(value));
-		}
-
-		protected abstract void setInt(Integer value);
-	}
-
 	public class Instance extends BaseScriptInstance {
-
-		private final List<BoundVar> mVars = new ArrayList<>();
 
 		public Instance() {
 			for (ScriptVariable sv : JavaScript.this.getVariables()) {
 				for (BoundVar bv : mVars) {
 					if (bv.var == sv) {
-						bv.accessor.setValue(JavaScript.this.get(sv));
+						bv.accessor.setValue(this, JavaScript.this.get(sv));
 					}
 				}
 			}
 
 		}
 
-		protected int bindInt(ScriptVariable var, IntAccessor acc) {
-			mVars.add(new BoundVar(var, acc));
-			return toInt(JavaScript.this.get(var));
-		}
-
 		@Override
 		public Object getValue(ScriptVariable sv) {
 			for (BoundVar var : mVars) {
 				if (var.var == sv) {
-					return var.accessor.getValue();
+					return var.accessor.getValue(this);
 				}
 
 			}
@@ -89,7 +161,7 @@ public abstract class JavaScript implements Script {
 		public void reset(ScriptVariable var) {
 			for (BoundVar bv : mVars) {
 				if (bv.var == var) {
-					bv.accessor.setValue(JavaScript.this.get(var));
+					bv.accessor.setValue(this, JavaScript.this.get(var));
 				}
 			}
 		}

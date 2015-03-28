@@ -8,7 +8,7 @@ owner = nil;
 centerX = 0
 centerY = 0
 
-radius = radius or 122
+radius = radius or 4
 
 function onCreate( ctx )
 	owner = ctx;

@@ -11,4 +11,5 @@ public interface ScriptInstance {
 
 	void update(float dt);
 
+	void saveState();
 }

@@ -105,7 +105,14 @@ public class RightPanel extends BasePanel {
 
 					@Override
 					public void accept(Object t) {
-						script.set(var, t);
+						int num;
+						try {
+							num = Integer.parseInt(t.toString());
+						} catch (NumberFormatException e) {
+							return;
+						}
+						script.set(var, num);
+
 						instance.reset(var);
 					}
 				};
