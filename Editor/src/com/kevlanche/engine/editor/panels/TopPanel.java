@@ -24,6 +24,9 @@ public class TopPanel extends BasePanel {
 		stop.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				for (Actor a : state.getAllActors()) {
+					a.reset();
+				}
 				state.setIsRunning(false);
 			}
 		});
