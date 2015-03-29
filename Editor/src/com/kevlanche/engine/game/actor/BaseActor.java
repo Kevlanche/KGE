@@ -69,7 +69,6 @@ public class BaseActor implements ScriptOwner {
 
 	@Override
 	public void addScript(Script script) {
-		// Plz don't hate me.
 		final InstanceAcessor defAccessor = new InstanceAcessor() {
 
 			ScriptInstance instance;

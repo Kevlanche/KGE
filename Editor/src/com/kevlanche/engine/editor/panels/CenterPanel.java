@@ -39,6 +39,8 @@ public class CenterPanel extends BasePanel {
 			Point start = new Point();
 			Actor target = null;
 
+			boolean nullSelection = false;
+
 			@Override
 			public void mousePressed(MouseEvent e) {
 				start = swingToGame(e.getX(), e.getY());
@@ -53,7 +55,12 @@ public class CenterPanel extends BasePanel {
 						break;
 					}
 				}
-				mState.setCurrentSelection(target);
+				if (target == null) {
+					nullSelection = true;
+				} else {
+					nullSelection = false;
+					mState.setCurrentSelection(target);
+				}
 			}
 
 			@Override
@@ -64,6 +71,7 @@ public class CenterPanel extends BasePanel {
 				int dy = curr.y - start.y;
 
 				if (dx != 0 || dy != 0) {
+					nullSelection = false;
 					System.out.println("Dragged " + dx + "," + dy);
 
 					if (target != null) {
@@ -71,7 +79,7 @@ public class CenterPanel extends BasePanel {
 						System.out.println(Integer.toBinaryString(mods));
 						if ((mods & MouseEvent.SHIFT_MASK) != 0) {
 							target.size.width += dx;
-							target.size.height+= dy;
+							target.size.height += dy;
 							target.size.saveState();
 						} else {
 							target.position.x += dx;
@@ -93,12 +101,18 @@ public class CenterPanel extends BasePanel {
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				target = null;
+				if (nullSelection) {
+					mState.setCurrentSelection(null);
+				}
 			}
-			
+
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				scaleFactor = Math.max(0.25f, Math.min(1.25f, scaleFactor - e.getUnitsToScroll() / 30f));
-				System.out.println("sf = " +scaleFactor);
+				scaleFactor = Math.max(
+						0.25f,
+						Math.min(1.25f, scaleFactor - e.getUnitsToScroll()
+								/ 30f));
+				System.out.println("sf = " + scaleFactor);
 			}
 		};
 
@@ -136,7 +150,7 @@ public class CenterPanel extends BasePanel {
 		return new Point((int) dst.getX(), (int) dst.getY());
 	}
 
-	private Rectangle gameToSwing(int x, int y, int w, int h) {
+	private Rectangle gameToSwing(float x, float y, float w, float h) {
 
 		final Point2D srcPos = new Point2D.Float(x, y);
 		final Point2D dst = new Point2D.Float();
@@ -161,7 +175,6 @@ public class CenterPanel extends BasePanel {
 		super.paint(g);
 
 		updateTransform();
-		
 
 		final int gridw = 20;
 		final int gridh = 20;
@@ -194,7 +207,7 @@ public class CenterPanel extends BasePanel {
 
 			final Rectangle toDraw = gameToSwing(actor.position.x,
 					actor.position.y, actor.size.width, actor.size.height);
-			
+
 			if (actor == mState.getCurrentSelection()) {
 				g.setColor(focusColor);
 			} else {

@@ -11,6 +11,7 @@ import com.kevlanche.engine.game.script.BaseScriptInstance;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptInstance;
 import com.kevlanche.engine.game.script.ScriptOwner;
+import com.kevlanche.engine.game.script.var.FloatVariable;
 import com.kevlanche.engine.game.script.var.IntVariable;
 import com.kevlanche.engine.game.script.var.ScriptVariable;
 
@@ -99,6 +100,8 @@ public abstract class JavaScript implements Script {
 			final ScriptVariable var;
 			if (typeName.equals("int")) {
 				var = new IntVariable(name, toInt(defaultValue));
+			} else if (typeName.equals("float")) {
+				var = new FloatVariable(name, toFloat(defaultValue));
 			} else {
 				throw new IllegalArgumentException("Illegal type \"" + typeName
 						+ "\" on field \"" + name + "\"");
@@ -118,12 +121,25 @@ public abstract class JavaScript implements Script {
 		Object getValue(Object target);
 	}
 
-	private int toInt(Object value) {
+	protected int toInt(Object value) {
 		if (value instanceof Integer) {
 			return ((Integer) value);
 		} else {
 			try {
 				return (Integer.parseInt(String.valueOf(value)));
+			} catch (NumberFormatException nfe) {
+				nfe.printStackTrace();
+				return 0;
+			}
+		}
+	}
+
+	protected float toFloat(Object value) {
+		if (value instanceof Float) {
+			return ((Float) value);
+		} else {
+			try {
+				return (Float.parseFloat(String.valueOf(value)));
 			} catch (NumberFormatException nfe) {
 				nfe.printStackTrace();
 				return 0;

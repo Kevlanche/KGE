@@ -48,7 +48,7 @@ public class Actor extends BaseActor {
 		}
 
 		public class Position extends Instance {
-			public int x, y;
+			public float x, y;
 
 			public Position() {
 			}
@@ -56,12 +56,16 @@ public class Actor extends BaseActor {
 	}
 
 	public class SizeScript extends JavaScript {
-
 		public SizeScript() {
 			super(Size.class);
 
 			registerVar("width", 4);
 			registerVar("height", 4);
+		}
+		
+		@Override
+		public void set(ScriptVariable variable, Object value) {
+			super.set(variable, Math.max(1, toInt(value)));
 		}
 
 		public class Size extends Instance {

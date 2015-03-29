@@ -20,6 +20,7 @@ import com.kevlanche.engine.editor.panels.TopPanel;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Actor;
 import com.kevlanche.engine.game.script.Script;
+import com.kevlanche.engine.game.script.ScriptProvider;
 import com.kevlanche.engine.game.script.lua.LuaScript;
 import com.kevlanche.engine.game.script.lua.SimpleScriptLoader.Streamable;
 
@@ -71,27 +72,26 @@ public class Editor {
 
 		sc.add(new ClassPathScript("/lua/test.lua"));
 		sc.add(new ClassPathScript("/lua/transform.lua"));
-
-		final Actor a1 = new Actor();
-		a1.addScript(new ClassPathScript("/lua/test.lua"));
-
-		final Actor a2 = new Actor();
-		a2.position.x = 5;
-		a2.position.y = 5;
-		a2.position.saveState();
+		sc.add(new ClassPathScript("/lua/move.lua"));
+		
+		final ScriptProvider provider = new ScriptProvider() {
+			
+			@Override
+			public List<Script> getScripts() {
+				return sc;
+			}
+		};
 
 		final GameState state = new GameState();
-		state.addActor(a1);
-		state.addActor(a2);
-		state.setCurrentSelection(a1);
+		state.addActor(new Actor());
 
 		final JPanel content = new JPanel();
 		content.setBackground(Color.DARK_GRAY);
 		content.setLayout(new BorderLayout());
-		content.add(new LeftPanel(), BorderLayout.WEST);
+		content.add(new LeftPanel(state), BorderLayout.WEST);
 		content.add(new TopPanel(state), BorderLayout.NORTH);
 		content.add(new CenterPanel(state), BorderLayout.CENTER);
-		content.add(new RightPanel(state), BorderLayout.EAST);
+		content.add(new RightPanel(state, provider), BorderLayout.EAST);
 		frame.setContentPane(content);
 
 		frame.setLocationByPlatform(true);

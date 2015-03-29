@@ -139,7 +139,6 @@ public class LuaScript implements Script {
 				});
 			} catch (LuaError e) {
 				e.printStackTrace();
-				// No onCreate function defined. No probz
 			}
 
 		}

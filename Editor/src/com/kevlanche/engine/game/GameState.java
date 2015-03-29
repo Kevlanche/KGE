@@ -44,8 +44,7 @@ public class GameState extends Observable {
 
 	public void setIsRunning(boolean run) {
 		mIsRunning = run;
-		setChanged();
-		notifyObservers();
+		triggerOnChanged();
 	}
 
 	public List<Actor> getAllActors() {
@@ -54,8 +53,18 @@ public class GameState extends Observable {
 
 	public void addActor(Actor actor) {
 		mAllActors.add(actor);
-		setChanged();
-		notifyObservers();
+		if (mCurrentSelection == null) {
+			mCurrentSelection = actor;
+		}
+		triggerOnChanged();
+	}
+
+	public void removeActor(Actor actor) {
+		if (actor == mCurrentSelection) {
+			mCurrentSelection = null;
+		}
+		mAllActors.remove(actor);
+		triggerOnChanged();
 	}
 
 	public Actor getCurrentSelection() {
@@ -63,9 +72,17 @@ public class GameState extends Observable {
 	}
 
 	public void setCurrentSelection(Actor currentSelection) {
+		if (mCurrentSelection == currentSelection) {
+			return;
+		}
 		mCurrentSelection = currentSelection;
+		triggerOnChanged();
+	}
+
+	public void triggerOnChanged() {
 		setChanged();
 		notifyObservers();
 	}
+
 
 }

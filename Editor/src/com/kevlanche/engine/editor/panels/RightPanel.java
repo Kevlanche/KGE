@@ -2,19 +2,14 @@ package com.kevlanche.engine.editor.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
@@ -25,8 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.Timer;
@@ -37,6 +33,7 @@ import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Actor;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptInstance;
+import com.kevlanche.engine.game.script.ScriptProvider;
 import com.kevlanche.engine.game.script.ValueType;
 import com.kevlanche.engine.game.script.var.ScriptVariable;
 
@@ -45,12 +42,50 @@ public class RightPanel extends BasePanel {
 
 	private GameState mState;
 	Timer mPoller = null;
+	private final JPanel mAttributeHolder;
 
-	public RightPanel(GameState state) {
+	public RightPanel(GameState state, final ScriptProvider provider) {
 		mState = state;
 
 		setBackground(Color.GRAY);
-		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+		setLayout(new BorderLayout());
+
+		mAttributeHolder = new JPanel();
+		add(mAttributeHolder, BorderLayout.NORTH);
+
+		final JPanel btnPanel = new JPanel(new BorderLayout());
+		final JButton add = new JButton("+");
+		add.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				final List<Script> availScripts = provider.getScripts();
+
+				if (availScripts.isEmpty()) {
+					return;
+				}
+
+				final Actor focus = mState.getCurrentSelection();
+				
+				if (focus == null) {
+					return;
+				}
+				final Script[] opts = availScripts
+						.toArray(new Script[availScripts.size()]);
+
+				final int sel = JOptionPane.showOptionDialog(
+						RightPanel.this, "What script should be added?",
+						"Add script", JOptionPane.DEFAULT_OPTION,
+						JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
+				
+				if (sel >= 0 && sel < opts.length) {
+					focus.addScript(opts[sel]);
+					mState.triggerOnChanged();
+				}
+			}
+		});
+		btnPanel.add(add, BorderLayout.CENTER);
+		add(btnPanel, BorderLayout.SOUTH);
 
 		state.addObserver(new Observer() {
 
@@ -59,7 +94,7 @@ public class RightPanel extends BasePanel {
 				if (mPoller != null) {
 					mPoller.stop();
 				}
-				removeAll();
+				mAttributeHolder.removeAll();
 				buildUi();
 				revalidate();
 				repaint();
@@ -71,7 +106,8 @@ public class RightPanel extends BasePanel {
 	private void buildUi() {
 		final Actor actor = mState.getCurrentSelection();
 		if (actor == null) {
-			add(new JPanel() {
+			mAttributeHolder.setLayout(new BorderLayout());
+			mAttributeHolder.add(new JPanel() {
 
 				public void paint(java.awt.Graphics g) {
 					g.setColor(Color.DARK_GRAY);
@@ -79,9 +115,15 @@ public class RightPanel extends BasePanel {
 					g.setColor(Color.WHITE);
 					g.drawString("No selection", 5, 5);
 				};
-			});
+			}, BorderLayout.CENTER);
 			return;
 		}
+		mAttributeHolder.setLayout(new GridBagLayout());
+
+		final GridBagConstraints rootGbc = new GridBagConstraints(1, 1, 1, 1,
+				1.0, 1.0, GridBagConstraints.NORTHWEST,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 5, 5);
+
 		for (final ScriptInstance instance : actor.getScripts()) {
 
 			final JPanel instanceHolder = new JPanel();
@@ -204,7 +246,8 @@ public class RightPanel extends BasePanel {
 			});
 			mPoller.start();
 
-			add(instanceHolder);
+			mAttributeHolder.add(instanceHolder, rootGbc);
+			rootGbc.gridy++;
 		}
 	}
 }
