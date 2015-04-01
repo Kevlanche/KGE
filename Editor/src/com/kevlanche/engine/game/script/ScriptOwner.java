@@ -6,9 +6,8 @@ import com.kevlanche.engine.game.Entity;
 
 public interface ScriptOwner extends Entity {
 
-	void installComponent(String name, Object value);
-	Object get(String name);
+	ScriptInstance get(String name);
 	
-	void addScript(Script script);
+	void addScript(String name, Script script);
 	Collection<ScriptInstance> getScripts();
 }

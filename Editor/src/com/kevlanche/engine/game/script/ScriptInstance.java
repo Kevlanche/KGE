@@ -7,9 +7,10 @@ public interface ScriptInstance {
 
 	Script getSource();
 	Object getValue(ScriptVariable var);
+	void setValue(ScriptVariable var, Object value);
 	void reset(ScriptVariable var);
 
-	void update(float dt);
+	void update();
 
 	void saveState();
 }

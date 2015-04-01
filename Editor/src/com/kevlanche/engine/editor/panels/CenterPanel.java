@@ -5,17 +5,19 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-import java.nio.channels.SelectableChannel;
-
-import javax.swing.SwingUtilities;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.kevlanche.engine.game.GameState;
+import com.kevlanche.engine.game.Kge;
 import com.kevlanche.engine.game.actor.Actor;
 
 @SuppressWarnings("serial")
@@ -43,6 +45,7 @@ public class CenterPanel extends BasePanel {
 
 			@Override
 			public void mousePressed(MouseEvent e) {
+				requestFocus();
 				start = swingToGame(e.getX(), e.getY());
 
 				target = null;
@@ -119,6 +122,34 @@ public class CenterPanel extends BasePanel {
 		addMouseListener(ma);
 		addMouseMotionListener(ma);
 		addMouseWheelListener(ma);
+
+		final Map<Integer, Integer> keyMappings = new HashMap<>();
+		keyMappings.put(KeyEvent.VK_RIGHT, Kge.Input.RIGHT);
+		keyMappings.put(KeyEvent.VK_LEFT, Kge.Input.LEFT);
+		keyMappings.put(KeyEvent.VK_UP, Kge.Input.UP);
+		keyMappings.put(KeyEvent.VK_DOWN, Kge.Input.DOWN);
+		keyMappings.put(KeyEvent.VK_SPACE, Kge.Input.SPACE);
+		addKeyListener(new KeyAdapter() {
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				handle(e, true);
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				handle(e, false);
+			}
+
+			private void handle(KeyEvent e, boolean pressed) {
+				final Integer mapping = keyMappings.get(e.getKeyCode());
+				if (mapping == null) {
+					return;
+				}
+				Kge.getInstance().input.setPressing(mapping, pressed);
+			}
+		});
+		setFocusable(true);
 
 		mCombinedTransform = new AffineTransform();
 
@@ -214,15 +245,20 @@ public class CenterPanel extends BasePanel {
 				g.setColor(normalColor);
 			}
 
+			Graphics2D g2d = (Graphics2D) g;
+
+			AffineTransform at = g2d.getTransform();
+			double rot = Math.PI * -actor.rotation.degrees / 180.0;
+			at.rotate(rot, toDraw.x, toDraw.y + toDraw.height);
+			g2d.setTransform(at);
+
 			g.fillRect(toDraw.x, toDraw.y, toDraw.width, toDraw.height);
 
 			g.setColor(Color.BLUE.darker().darker());
 			g.drawRect(toDraw.x, toDraw.y, toDraw.width, toDraw.height);
-			// final int w = actor.size.width;
-			// final int h = actor.size.height;
-			// g.fill3DRect((int) actor.position.x, (int) actor.position.y, w,
-			// h,
-			// true);
+
+			at.rotate(-rot, toDraw.x, toDraw.y + toDraw.height);
+			g2d.setTransform(at);
 		}
 
 		repaint();

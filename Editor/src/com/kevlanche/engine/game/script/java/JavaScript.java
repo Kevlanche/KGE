@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.kevlanche.engine.game.script.BaseScript;
 import com.kevlanche.engine.game.script.BaseScriptInstance;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptInstance;
@@ -15,7 +16,7 @@ import com.kevlanche.engine.game.script.var.FloatVariable;
 import com.kevlanche.engine.game.script.var.IntVariable;
 import com.kevlanche.engine.game.script.var.ScriptVariable;
 
-public abstract class JavaScript implements Script {
+public abstract class JavaScript extends BaseScript {
 
 	private class BoundVar {
 		public final ScriptVariable var;
@@ -25,7 +26,6 @@ public abstract class JavaScript implements Script {
 			this.var = var;
 			this.accessor = accessor;
 		}
-
 	}
 
 	private final List<BoundVar> mVars = new ArrayList<>();
@@ -174,21 +174,21 @@ public abstract class JavaScript implements Script {
 		}
 
 		@Override
-		public void reset(ScriptVariable var) {
+		public void setValue(ScriptVariable var, Object value) {
 			for (BoundVar bv : mVars) {
 				if (bv.var == var) {
-					bv.accessor.setValue(this, JavaScript.this.get(var));
+					bv.accessor.setValue(this, value);
 				}
 			}
 		}
-		
+
 		@Override
 		public Script getSource() {
 			return JavaScript.this;
 		}
 
 		@Override
-		public void update(float dt) {
+		public void update() {
 
 		}
 	}

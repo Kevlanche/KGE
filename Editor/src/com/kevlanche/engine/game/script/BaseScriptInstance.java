@@ -11,9 +11,9 @@ public abstract class BaseScriptInstance implements ScriptInstance {
 		}
 	}
 
-//	public void reset() {
-//		for (ScriptVariable var : getVariables()) {
-//			set(var, var.getDefaultValue());
-//		}
-//	};
+	@Override
+	public void reset(ScriptVariable var) {
+		setValue(var, getSource().get(var));
+	}
+	
 }

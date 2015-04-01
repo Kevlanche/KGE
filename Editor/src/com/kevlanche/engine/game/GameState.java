@@ -21,19 +21,25 @@ public class GameState extends Observable {
 				final long currTime = System.currentTimeMillis();
 				final long dt = currTime - lastTime;
 
+				Kge kge = Kge.getInstance();
+				kge.time.currentTimeMillis = System.currentTimeMillis();
 				if (mIsRunning) {
 					final float fdt = dt / 1000f;
+					kge.time.gameTime += fdt;
+					kge.time.dt = fdt;
 
 					for (Actor actor : mAllActors) {
-						actor.update(fdt);
+						actor.update();
 					}
+
+					kge.input.afterFrame();
 				}
 
 				lastTime = currTime;
 			}
 		}).start();
 	}
-
+	
 	private boolean mIsRunning = false;
 	private List<Actor> mAllActors = new CopyOnWriteArrayList<>();
 	private Actor mCurrentSelection = null;
@@ -64,6 +70,7 @@ public class GameState extends Observable {
 			mCurrentSelection = null;
 		}
 		mAllActors.remove(actor);
+		actor.dispose();
 		triggerOnChanged();
 	}
 
@@ -83,6 +90,5 @@ public class GameState extends Observable {
 		setChanged();
 		notifyObservers();
 	}
-
 
 }

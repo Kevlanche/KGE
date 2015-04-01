@@ -66,20 +66,20 @@ public class RightPanel extends BasePanel {
 				}
 
 				final Actor focus = mState.getCurrentSelection();
-				
+
 				if (focus == null) {
 					return;
 				}
 				final Script[] opts = availScripts
 						.toArray(new Script[availScripts.size()]);
 
-				final int sel = JOptionPane.showOptionDialog(
-						RightPanel.this, "What script should be added?",
-						"Add script", JOptionPane.DEFAULT_OPTION,
+				final int sel = JOptionPane.showOptionDialog(RightPanel.this,
+						"What script should be added?", "Add script",
+						JOptionPane.DEFAULT_OPTION,
 						JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
-				
+
 				if (sel >= 0 && sel < opts.length) {
-					focus.addScript(opts[sel]);
+					focus.addScript("pythonTest", opts[sel]);
 					mState.triggerOnChanged();
 				}
 			}
@@ -181,13 +181,14 @@ public class RightPanel extends BasePanel {
 						}
 					}
 				});
-				if (var.getType() == ValueType.INTEGER) {
+				if (var.getType() == ValueType.INTEGER
+						|| var.getType() == ValueType.FLOAT) {
 					final Consumer<Integer> changeNum = new Consumer<Integer>() {
 
 						@Override
 						public void accept(Integer t) {
-							final int inc = Integer.parseInt(String
-									.valueOf(instance.getValue(var))) + t;
+							final int inc = (int) (Float.parseFloat(String
+									.valueOf(instance.getValue(var))) + t);
 							updater.accept(inc);
 						}
 					};
