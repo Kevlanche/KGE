@@ -1,4 +1,4 @@
-package com.kevlanche.engine.game.script;
+package com.kevlanche.engine.game.state.var;
 
 public enum ValueType {
 	INTEGER,

@@ -2,7 +2,6 @@ package com.kevlanche.engine.editor.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -24,6 +23,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
@@ -32,10 +32,10 @@ import javax.swing.event.DocumentListener;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Actor;
 import com.kevlanche.engine.game.script.Script;
-import com.kevlanche.engine.game.script.ScriptInstance;
 import com.kevlanche.engine.game.script.ScriptProvider;
-import com.kevlanche.engine.game.script.ValueType;
-import com.kevlanche.engine.game.script.var.ScriptVariable;
+import com.kevlanche.engine.game.state.State;
+import com.kevlanche.engine.game.state.var.ValueType;
+import com.kevlanche.engine.game.state.var.Variable;
 
 @SuppressWarnings("serial")
 public class RightPanel extends BasePanel {
@@ -79,7 +79,8 @@ public class RightPanel extends BasePanel {
 						JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
 
 				if (sel >= 0 && sel < opts.length) {
-					focus.addScript("pythonTest", opts[sel]);
+					focus.addScript(opts[sel]);
+					// focus.addScript("pythonTest", opts[sel]);
 					mState.triggerOnChanged();
 				}
 			}
@@ -124,40 +125,26 @@ public class RightPanel extends BasePanel {
 				1.0, 1.0, GridBagConstraints.NORTHWEST,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 5, 5);
 
-		for (final ScriptInstance instance : actor.getScripts()) {
+		for (final State state : actor.getStates()) {
 
 			final JPanel instanceHolder = new JPanel();
-			instanceHolder.setBorder(BorderFactory.createEtchedBorder());
+
+			instanceHolder.setBorder(BorderFactory.createTitledBorder(state
+					.getName()));
 			instanceHolder.setLayout(new GridBagLayout());
 
 			final GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1,
 					1.0, 1.0, GridBagConstraints.WEST,
 					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 2, 5);
 
-			final Script script = instance.getSource();
-			List<ScriptVariable> vars = script.getVariables();
+			List<Variable> vars = state.getVariables();
 			List<JTextField> fields = new ArrayList<>();
 			AtomicBoolean ignoreUpdates = new AtomicBoolean(false);
-			for (final ScriptVariable var : vars) {
+			for (final Variable var : vars) {
 
 				final JTextField jtf = new JTextField(5);
 				fields.add(jtf);
 
-				final Consumer<Object> updater = new Consumer<Object>() {
-
-					@Override
-					public void accept(Object t) {
-						int num;
-						try {
-							num = Integer.parseInt(t.toString());
-						} catch (NumberFormatException e) {
-							return;
-						}
-						script.set(var, num);
-
-						instance.reset(var);
-					}
-				};
 				jtf.getDocument().addDocumentListener(new DocumentListener() {
 
 					@Override
@@ -177,7 +164,12 @@ public class RightPanel extends BasePanel {
 
 					void update() {
 						if (!ignoreUpdates.get()) {
-							updater.accept(jtf.getText());
+							try {
+								final float f = Float.parseFloat(jtf.getText());
+								var.set(f);
+							} catch (NumberFormatException e) {
+								// Ignore
+							}
 						}
 					}
 				});
@@ -187,9 +179,7 @@ public class RightPanel extends BasePanel {
 
 						@Override
 						public void accept(Integer t) {
-							final int inc = (int) (Float.parseFloat(String
-									.valueOf(instance.getValue(var))) + t);
-							updater.accept(inc);
+							var.set(var.asFloat() + t);
 						}
 					};
 					jtf.addKeyListener(new KeyAdapter() {
@@ -212,6 +202,7 @@ public class RightPanel extends BasePanel {
 						public void mouseWheelMoved(MouseWheelEvent arg0) {
 							int uts = arg0.getUnitsToScroll();
 							changeNum.accept(-uts);
+							jtf.setText(var.asString());
 						}
 					});
 				}
@@ -235,9 +226,12 @@ public class RightPanel extends BasePanel {
 					ignoreUpdates.set(true);
 					for (int i = 0; i < fields.size(); i++) {
 						final JTextField jtf = fields.get(i);
-						final ScriptVariable var = vars.get(i);
+						if (jtf.hasFocus()) {
+							continue;
+						}
+						final Variable var = vars.get(i);
 
-						String newVal = String.valueOf(instance.getValue(var));
+						final String newVal = var.asString();
 						if (!newVal.equals(jtf.getText())) {
 							jtf.setText(newVal);
 						}
@@ -250,5 +244,43 @@ public class RightPanel extends BasePanel {
 			mAttributeHolder.add(instanceHolder, rootGbc);
 			rootGbc.gridy++;
 		}
+		mAttributeHolder.add(new JSeparator(), rootGbc);
+		rootGbc.gridy++;
+
+		final JPanel instanceHolder = new JPanel();
+
+		instanceHolder.setBorder(BorderFactory.createTitledBorder("Scripts"));
+		instanceHolder.setLayout(new GridBagLayout());
+
+		final GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 1.0,
+				1.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 2, 5);
+
+		for (final Script script : actor.getScripts()) {
+
+			final JPanel varHolder = new JPanel();
+			varHolder.setBackground(Color.GRAY);
+			varHolder.setBorder(BorderFactory
+					.createLineBorder(Color.LIGHT_GRAY));
+			varHolder.setLayout(new BorderLayout());
+			varHolder.add(new JLabel(script.toString()), BorderLayout.WEST);
+
+			final JButton rm = new JButton("x");
+			rm.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					actor.removeScript(script);
+					mState.triggerOnChanged();
+				}
+			});
+			varHolder.add(rm, BorderLayout.EAST);
+			
+			instanceHolder.add(varHolder, gbc);
+			gbc.gridy++;
+
+		}
+		mAttributeHolder.add(instanceHolder, rootGbc);
+		rootGbc.gridy++;
 	}
 }

@@ -1,73 +1,99 @@
 package com.kevlanche.engine.game.actor;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.kevlanche.engine.game.script.CompileException;
+import com.kevlanche.engine.game.script.CompiledScript;
 import com.kevlanche.engine.game.script.ReloadListener;
 import com.kevlanche.engine.game.script.Script;
-import com.kevlanche.engine.game.script.ScriptInstance;
-import com.kevlanche.engine.game.script.ScriptOwner;
+import com.kevlanche.engine.game.state.State;
 
-public class BaseActor implements ScriptOwner {
+public class BaseActor implements Actor {
 
-	protected interface InstanceAcessor {
-		void set(ScriptInstance value);
+	protected class ScriptContainer implements ReloadListener {
+		public final Script script;
+		public CompiledScript compiled;
 
-		ScriptInstance getValue();
-	}
-
-	private class AutodisposedReloadListener implements ReloadListener {
-
-		private final Script script;
-		private final InstanceAcessor acc;
-
-		public AutodisposedReloadListener(Script script, InstanceAcessor acc) {
+		public ScriptContainer(Script script) {
 			this.script = script;
-			this.acc = acc;
-			this.script.addReloadListener(this);
+
+			script.addReloadListener(this);
 		}
 
 		@Override
 		public void onScriptSourceReloaded() {
-			acc.set(script.createInstance(BaseActor.this));
-		}
-	}
-
-	protected final Map<String, ScriptInstance> mInstalledComponents = new HashMap<>();
-
-	private final List<InstanceAcessor> mScripts = new CopyOnWriteArrayList<>();
-
-	private final List<AutodisposedReloadListener> reloadListeners;
-
-	public BaseActor() {
-		reloadListeners = new CopyOnWriteArrayList<>();
-	}
-
-	public void dispose() {
-		for (AutodisposedReloadListener l : reloadListeners) {
-			l.script.removeReloadListener(l);
-		}
-		reloadListeners.clear();
-	}
-
-	public void reset() {
-		for (InstanceAcessor instance : mScripts) {
-			Script src = instance.getValue().getSource();
-			ScriptInstance copy = src.createInstance(BaseActor.this);
-			instance.set(copy);
-		}
-	}
-
-	public void update() {
-		for (InstanceAcessor instance : mScripts) {
 			try {
-				instance.getValue().update();
-			} catch (Exception ex) {
-				ex.printStackTrace();
+				compiled = script.compile(BaseActor.this);
+			} catch (CompileException e) {
+				e.printStackTrace();
+				System.err.println("Unable to recompile " + script);
+			}
+		}
+	}
+
+	private class ActiveState {
+		public final List<State> states = new ArrayList<>();
+
+		ActiveState createCopy() throws CompileException {
+			final ActiveState ret = new ActiveState();
+			for (State state : states) {
+				ret.states.add(state.compile(BaseActor.this));
+			}
+			return ret;
+		}
+	}
+
+	protected final Map<String, CompiledScript> mInstalledComponents = new HashMap<>();
+
+	private final List<ScriptContainer> mScripts;
+	private final LinkedList<ActiveState> mStack;
+	private ActiveState mCurrentState;
+
+	private final List<Actor> mChildren;
+	private final Actor mParent;
+
+	public BaseActor(Actor parent) {
+		mScripts = new CopyOnWriteArrayList<>();
+		mStack = new LinkedList<>();
+		mCurrentState = new ActiveState();
+		mChildren = new CopyOnWriteArrayList<>();
+		mParent = parent;
+	}
+
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void tick() throws CompileException {
+		for (ScriptContainer container : mScripts) {
+			if (container.compiled == null) {
+				container.compiled = container.script.compile(this);
+			}
+		}
+		for (ScriptContainer container : mScripts) {
+			container.compiled.tick();
+		}
+	}
+
+	@Override
+	public void addScript(Script script) {
+		ScriptContainer container = new ScriptContainer(script);
+		mScripts.add(container);
+	}
+
+	@Override
+	public void removeScript(Script script) {
+		for (ScriptContainer container : mScripts) {
+			if (container.script == script) {
+				container.script.removeReloadListener(container);
+				mScripts.remove(container);
 			}
 		}
 	}
@@ -76,53 +102,55 @@ public class BaseActor implements ScriptOwner {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public ScriptInstance get(String name) {
-		return mInstalledComponents.get(name);
-	}
-
-	@Override
-	public void addScript(final String name, final Script script) {
-		final InstanceAcessor defAccessor = new InstanceAcessor() {
-
-			ScriptInstance instance;
-
-			@Override
-			public void set(ScriptInstance value) {
-				mInstalledComponents.put(name, value);
-				instance = value;
-			}
-
-			@Override
-			public ScriptInstance getValue() {
-				return instance;
-			}
-		};
-		addScript(script, defAccessor);
-	}
-
-	protected void addScript(Script script, InstanceAcessor defAccessor) {
-		defAccessor.set(script.createInstance(this));
-		mScripts.add(defAccessor);
-		script.addReloadListener(new ReloadListener() {
-
-			@Override
-			public void onScriptSourceReloaded() {
-				defAccessor.set(script.createInstance(BaseActor.this));
-			}
-		});
-		reloadListeners
-				.add(new AutodisposedReloadListener(script, defAccessor));
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Collection<ScriptInstance> getScripts() {
-		final List<ScriptInstance> ret = new ArrayList<>();
-		for (InstanceAcessor iw : mScripts) {
-			ret.add(iw.getValue());
+	public List<Script> getScripts() {
+		final List<Script> ret = new ArrayList<>();
+		for (ScriptContainer sc : mScripts) {
+			ret.add(sc.script);
 		}
 		return ret;
+	}
+
+	@Override
+	public void addState(State state) {
+		mCurrentState.states.add(state);
+	}
+
+	@Override
+	public List<State> getStates() {
+		return mCurrentState.states;
+	}
+
+	@Override
+	public List<Actor> getChildren() {
+		return mChildren;
+	}
+
+	@Override
+	public Actor getParent() {
+		return mParent;
+	}
+
+	@Override
+	public void addActor(Actor actor) {
+		mChildren.add(actor);
+	}
+
+	@Override
+	public void saveState() throws CompileException {
+		mStack.add(mCurrentState.createCopy());
+		for (ScriptContainer sc : mScripts) {
+			sc.compiled = null;
+		}
+	}
+
+	@Override
+	public void restoreState() {
+		if (mStack.isEmpty()) {
+			System.err.println("no state to restore!!!");
+			Thread.dumpStack();
+			return;
+		}
+		mCurrentState = mStack.removeLast();
+
 	}
 }

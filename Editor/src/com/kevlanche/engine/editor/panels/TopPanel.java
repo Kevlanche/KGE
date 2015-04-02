@@ -7,7 +7,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
-import javax.swing.Timer;
 
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Actor;
@@ -20,28 +19,35 @@ public class TopPanel extends BasePanel {
 
 		setPreferredSize(new Dimension(50, 50));
 
-		final AbstractButton stop = new JButton("Stop");
-		stop.addActionListener(new ActionListener() {
+		final AbstractButton toggle = new JButton("Start");
+		toggle.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				for (Actor a : state.getAllActors()) {
-					a.reset();
+				state.setIsRunning(!state.getIsRunning());
+				
+				if (state.getIsRunning()) {
+					toggle.setText("Stop");
+				} else {
+					toggle.setText("Start");
 				}
-				state.setIsRunning(false);
+//				for (Actor a : state.getAllActors()) {
+//					a.reset();
+//				}
+//				state.setIsRunning(false);
 			}
 		});
-		add(stop);
-
-		final AbstractButton start = new JButton("Start");
-		start.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				for (Actor a : state.getAllActors()) {
-					a.reset();
-				}
-				state.setIsRunning(true);
-			}
-		});
-		add(start);
+		add(toggle);
+//
+//		final AbstractButton start = new JButton("Start");
+//		start.addActionListener(new ActionListener() {
+//			@Override
+//			public void actionPerformed(ActionEvent e) {
+//				for (Actor a : state.getAllActors()) {
+//					a.reset();
+//				}
+//				state.setIsRunning(true);
+//			}
+//		});
+//		add(start);
 	}
 }

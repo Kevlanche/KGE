@@ -19,6 +19,10 @@ import java.util.Map;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.Kge;
 import com.kevlanche.engine.game.actor.Actor;
+import com.kevlanche.engine.game.state.State;
+import com.kevlanche.engine.game.state.impl.Position;
+import com.kevlanche.engine.game.state.impl.Rotation;
+import com.kevlanche.engine.game.state.impl.Size;
 
 @SuppressWarnings("serial")
 public class CenterPanel extends BasePanel {
@@ -31,6 +35,44 @@ public class CenterPanel extends BasePanel {
 	private Point gameTransform = new Point();
 	private final AffineTransform mCombinedTransform;
 
+	private class PhysicalActor {
+		public Actor actor;
+		public Position position;
+		public Rotation rotation;
+		public Size size;
+	}
+
+	PhysicalActor fromNormalActor(Actor actor) {
+		Position pos = null;
+		Size size = null;
+		Rotation rotation = null;
+
+		for (State state : actor.getStates()) {
+			if (state instanceof Position) {
+				pos = (Position) state;
+			}
+			if (state instanceof Size) {
+				size = (Size) state;
+			}
+			if (state instanceof Rotation) {
+				rotation = (Rotation) state;
+			}
+
+		}
+
+		if (pos == null || size == null || rotation == null) {
+			System.err.println("Unable to extract pos/size from " + actor);
+			return null;
+		}
+		final PhysicalActor ret = new PhysicalActor();
+		ret.actor = actor;
+		ret.position = pos;
+		ret.size = size;
+		ret.rotation = rotation;
+
+		return ret;
+	}
+
 	public CenterPanel(GameState state) {
 		setBackground(Color.DARK_GRAY);
 
@@ -39,7 +81,7 @@ public class CenterPanel extends BasePanel {
 		final MouseAdapter ma = new MouseAdapter() {
 
 			Point start = new Point();
-			Actor target = null;
+			PhysicalActor target = null;
 
 			boolean nullSelection = false;
 
@@ -50,11 +92,16 @@ public class CenterPanel extends BasePanel {
 
 				target = null;
 				for (Actor actor : mState.getAllActors()) {
-					if (actor.position.x <= start.x
-							&& (actor.position.x + actor.size.width) >= start.x
-							&& actor.position.y <= start.y
-							&& (actor.position.y + actor.size.height) >= start.y) {
-						target = actor;
+					final PhysicalActor pa = fromNormalActor(actor);
+					if (pa == null) {
+						continue;
+					}
+
+					if (pa.position.x.asFloat() <= start.x
+							&& (pa.position.x.asFloat() + pa.size.width.asFloat()) >= start.x
+							&& pa.position.y.asFloat() <= start.y
+							&& (pa.position.y.asFloat() + pa.size.height.asFloat()) >= start.y) {
+						target = pa;
 						break;
 					}
 				}
@@ -62,7 +109,7 @@ public class CenterPanel extends BasePanel {
 					nullSelection = true;
 				} else {
 					nullSelection = false;
-					mState.setCurrentSelection(target);
+					mState.setCurrentSelection(target.actor);
 				}
 			}
 
@@ -81,13 +128,17 @@ public class CenterPanel extends BasePanel {
 						int mods = e.getModifiers();
 						System.out.println(Integer.toBinaryString(mods));
 						if ((mods & MouseEvent.SHIFT_MASK) != 0) {
-							target.size.width += dx;
-							target.size.height += dy;
-							target.size.saveState();
+							target.size.width.set(target.size.width.asInt()
+									+ dx);
+							target.size.height.set(target.size.height.asInt()
+									+ dy);
+							// target.size.saveState();
 						} else {
-							target.position.x += dx;
-							target.position.y += dy;
-							target.position.saveState();
+							target.position.x.set(target.position.x.asInt()
+									+ dx);
+							target.position.y.set(target.position.y.asInt()
+									+ dy);
+							// target.position.saveState();
 						}
 
 					} else {
@@ -235,9 +286,14 @@ public class CenterPanel extends BasePanel {
 		final Color normalColor = new Color(120, 120, 120, 200);
 
 		for (Actor actor : mState.getAllActors()) {
-
-			final Rectangle toDraw = gameToSwing(actor.position.x,
-					actor.position.y, actor.size.width, actor.size.height);
+			final PhysicalActor pa = fromNormalActor(actor);
+			if (pa == null) {
+				continue;
+			}
+			
+			final Rectangle toDraw = gameToSwing(pa.position.x.asFloat(),
+					pa.position.y.asFloat(), pa.size.width.asFloat(),
+					pa.size.height.asFloat());
 
 			if (actor == mState.getCurrentSelection()) {
 				g.setColor(focusColor);
@@ -248,7 +304,7 @@ public class CenterPanel extends BasePanel {
 			Graphics2D g2d = (Graphics2D) g;
 
 			AffineTransform at = g2d.getTransform();
-			double rot = Math.PI * -actor.rotation.degrees / 180.0;
+			double rot = Math.PI * -pa.rotation.degrees.asFloat() / 180.0;
 			at.rotate(rot, toDraw.x, toDraw.y + toDraw.height);
 			g2d.setTransform(at);
 

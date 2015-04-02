@@ -6,13 +6,15 @@ import java.util.List;
 import java.util.Observable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
 import com.kevlanche.engine.game.actor.Actor;
+import com.kevlanche.engine.game.script.CompileException;
 
 public class GameState extends Observable {
 	public GameState() {
-		new Timer(5, new ActionListener() {
+		new Timer(15, new ActionListener() {
 
 			long lastTime = System.currentTimeMillis();
 
@@ -29,7 +31,13 @@ public class GameState extends Observable {
 					kge.time.dt = fdt;
 
 					for (Actor actor : mAllActors) {
-						actor.update();
+						try {
+							actor.tick();
+						} catch (CompileException e1) {
+							mIsRunning = false;
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(null, "Compile errorz! " + e1.toString());
+						}
 					}
 
 					kge.input.afterFrame();
@@ -48,8 +56,28 @@ public class GameState extends Observable {
 		return mIsRunning;
 	}
 
+	public boolean getIsRunning() {
+		return mIsRunning;
+	}
+	
 	public void setIsRunning(boolean run) {
+		if (run == mIsRunning) {
+			return;
+		}
 		mIsRunning = run;
+		
+		for (Actor a : mAllActors) {
+			if (mIsRunning) {
+				try {
+					a.saveState();
+				} catch (CompileException e) {
+					e.printStackTrace();
+				}
+			} else {
+				a.restoreState();
+			}
+		}
+		
 		triggerOnChanged();
 	}
 

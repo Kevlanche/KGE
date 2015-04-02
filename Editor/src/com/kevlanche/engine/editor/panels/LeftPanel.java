@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Actor;
+import com.kevlanche.engine.game.actor.DefaultActor;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends BasePanel {
@@ -58,7 +59,7 @@ public class LeftPanel extends BasePanel {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final Actor actor = new Actor();
+				final Actor actor = new DefaultActor(null);
 				mState.addActor(actor);
 			}
 		});

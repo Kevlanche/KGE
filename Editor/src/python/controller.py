@@ -3,18 +3,6 @@ from kge import *
 
 # Keep python scripts write only?
 
-
-owner = 0
-radius = 2
-
-varDef = {
-	'val':5,
-	'min':3,
-	'max':7
-}
-
-globalDef = {"c":"d"}
-
 dx = 0.0
 dy = 0.0
 maxSpeed = 10.0
@@ -26,14 +14,14 @@ FULL_STOP_TIME = 0.55
 def clamp(val, minVal, maxVal):
 	return max(minVal, min(maxVal, val))
 
-def handleUpdate():
-
+def tick():
 	mv = kge.time.dt * 30
 
 	global dx
 	global dy
 
 	if kge.input.isPressing(kge.input.RIGHT):
+		print("isRight")
 		dx += mv
 	elif kge.input.isPressing(kge.input.LEFT):
 		dx -= mv
@@ -54,18 +42,5 @@ def handleUpdate():
 	dx = clamp(dx, -maxSpeed, maxSpeed)
 	dy = clamp(dy, -maxSpeed, maxSpeed)
 
-	owner.position.x += dx * kge.time.dt
-	owner.position.y = max(owner.position.y + dy * kge.time.dt, 0)
-
-def create(Owner, MaxSpeed = 10):
-	global owner
-	owner = Owner
-
-	global maxSpeed
-	maxSpeed = MaxSpeed
-
-	ret = {
-		'update': handleUpdate
-	}
-	return ret;
-
+	position.x += dx * kge.time.dt
+	position.y = max(position.y + dy * kge.time.dt, 0)

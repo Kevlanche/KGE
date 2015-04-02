@@ -23,10 +23,10 @@ import com.kevlanche.engine.editor.panels.LeftPanel;
 import com.kevlanche.engine.editor.panels.RightPanel;
 import com.kevlanche.engine.editor.panels.TopPanel;
 import com.kevlanche.engine.game.GameState;
-import com.kevlanche.engine.game.actor.Actor;
+import com.kevlanche.engine.game.actor.DefaultActor;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptProvider;
-import com.kevlanche.engine.game.script.python.PythonScript;
+import com.kevlanche.engine.game.script.impl.PythonScript;
 
 public class Editor {
 
@@ -113,7 +113,13 @@ public class Editor {
 
 		final GameState state = new GameState();
 
-		sc.add(new PythonClassPathScript("/python/controller.py", state));
+		sc.add(new PythonClassPathScript("/python/controller.py", state) {
+
+			@Override
+			public String toString() {
+				return "Basic 2D controller";
+			}
+		});
 
 		final ScriptProvider provider = new ScriptProvider() {
 
@@ -123,7 +129,7 @@ public class Editor {
 			}
 		};
 
-		state.addActor(new Actor());
+		state.addActor(new DefaultActor(null));
 
 		final JPanel content = new JPanel();
 		content.setBackground(Color.DARK_GRAY);
