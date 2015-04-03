@@ -23,16 +23,12 @@ import com.kevlanche.engine.editor.panels.LeftPanel;
 import com.kevlanche.engine.editor.panels.RightPanel;
 import com.kevlanche.engine.editor.panels.TopPanel;
 import com.kevlanche.engine.game.GameState;
-import com.kevlanche.engine.game.actor.DefaultActor;
+import com.kevlanche.engine.game.actor.DefaultEntity;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptProvider;
 import com.kevlanche.engine.game.script.impl.PythonScript;
 
 public class Editor {
-
-	public interface Streamable {
-		InputStream read() throws IOException;
-	}
 
 	public static class PythonClassPathScript extends PythonScript {
 
@@ -129,7 +125,7 @@ public class Editor {
 			}
 		};
 
-		state.addActor(new DefaultActor(null));
+		state.addEntity(new DefaultEntity(null));
 
 		final JPanel content = new JPanel();
 		content.setBackground(Color.DARK_GRAY);

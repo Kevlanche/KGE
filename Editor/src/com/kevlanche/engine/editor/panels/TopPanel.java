@@ -9,7 +9,7 @@ import javax.swing.AbstractButton;
 import javax.swing.JButton;
 
 import com.kevlanche.engine.game.GameState;
-import com.kevlanche.engine.game.actor.Actor;
+import com.kevlanche.engine.game.actor.Entity;
 
 @SuppressWarnings("serial")
 public class TopPanel extends BasePanel {

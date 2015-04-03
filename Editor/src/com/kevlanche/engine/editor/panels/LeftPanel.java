@@ -9,16 +9,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Observable;
-import java.util.Observer;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.kevlanche.engine.game.GameState;
-import com.kevlanche.engine.game.actor.Actor;
-import com.kevlanche.engine.game.actor.DefaultActor;
+import com.kevlanche.engine.game.GameStateObserverAdapter;
+import com.kevlanche.engine.game.actor.DefaultEntity;
+import com.kevlanche.engine.game.actor.Entity;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends BasePanel {
@@ -26,46 +25,48 @@ public class LeftPanel extends BasePanel {
 	private final GameState mState;
 
 	private final JPanel mContentPanel;
+
 	public LeftPanel(GameState state) {
 		setBackground(Color.GRAY);
 
 		mState = state;
-		mState.addObserver(new Observer() {
+		mState.addObserver(new GameStateObserverAdapter() {
 
 			@Override
-			public void update(Observable o, Object arg) {
+			public void onGenericChange() {
 				buildUI();
 			}
 		});
+
 		setLayout(new BorderLayout());
 		mContentPanel = new JPanel();
 		add(mContentPanel, BorderLayout.NORTH);
-		
+
 		final JPanel btnPanel = new JPanel(new BorderLayout());
 		final JButton remove = new JButton("-");
 		remove.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final Actor sel = mState.getCurrentSelection();
+				final Entity sel = mState.getCurrentSelection();
 				if (sel != null) {
-					mState.removeActor(sel);
+					mState.removeEntity(sel);
 				}
 			}
 		});
 		btnPanel.add(remove, BorderLayout.WEST);
 		final JButton add = new JButton("+");
 		add.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final Actor actor = new DefaultActor(null);
-				mState.addActor(actor);
+				final Entity actor = new DefaultEntity(null);
+				mState.addEntity(actor);
 			}
 		});
 		btnPanel.add(add, BorderLayout.EAST);
 		add(btnPanel, BorderLayout.SOUTH);
-		
+
 		buildUI();
 	}
 
@@ -77,7 +78,7 @@ public class LeftPanel extends BasePanel {
 				1.0, GridBagConstraints.NORTHWEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 5, 5);
 
-		for (Actor a : mState.getAllActors()) {
+		for (Entity a : mState.getEntities()) {
 			final JPanel actorPanel = new JPanel(new BorderLayout());
 
 			if (mState.getCurrentSelection() == a) {
@@ -101,17 +102,17 @@ public class LeftPanel extends BasePanel {
 
 	private final class MouseHandler extends MouseAdapter {
 		private final JPanel actorPanel;
-		private final Actor mActor;
+		private final Entity mActor;
 		private boolean mHover = false;
 		private boolean mClick = false;
-		
-		private MouseHandler(JPanel actorPanel, Actor actor) {
+
+		private MouseHandler(JPanel actorPanel, Entity actor) {
 			this.actorPanel = actorPanel;
 			this.mActor = actor;
-			
+
 			updateBg();
 		}
-		
+
 		@Override
 		public void mouseEntered(MouseEvent e) {
 			setHover(true);
