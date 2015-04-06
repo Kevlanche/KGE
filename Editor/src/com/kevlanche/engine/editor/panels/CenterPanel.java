@@ -28,13 +28,13 @@ import com.kevlanche.kge.runtime.KgeRuntime;
 @SuppressWarnings("serial")
 public class CenterPanel extends BasePanel {
 
-	public CenterPanel(GameState state) {
+	public CenterPanel(KgeRuntime runtime) {
 		setBackground(Color.DARK_GRAY);
 		setLayout(new BorderLayout());
 		
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		final Canvas cv = new Canvas();
-		new LwjglApplication(new KgeRuntime(state), cv);
+		new LwjglApplication(runtime, cv);
 		add(cv, BorderLayout.CENTER);
 	}
 }

@@ -28,64 +28,9 @@ import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptProvider;
 import com.kevlanche.engine.game.script.impl.PythonScript;
 import com.kevlanche.kge.runtime.GdxAssetProvider;
+import com.kevlanche.kge.runtime.KgeRuntime;
 
 public class Editor {
-
-	public static class PythonClassPathScript extends PythonScript {
-
-		private String mPath;
-
-		public PythonClassPathScript(String classPath, final GameState game)
-				throws IOException {
-			super(new Streamable() {
-
-				@Override
-				public InputStream read() throws IOException {
-					return Editor.class.getResourceAsStream(classPath);
-				}
-
-				@Override
-				public String toString() {
-					return classPath;
-				}
-			});
-
-			mPath = classPath;
-
-			AtomicInteger scriptState;
-			try (InputStream is = mSrc.read()) {
-				scriptState = new AtomicInteger(read(is).hashCode());
-			}
-			new Timer(100, new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					try (InputStream is = mSrc.read()) {
-						int newState = read(is).hashCode();
-						if (newState != scriptState.get()) {
-							scriptState.set(newState);
-							System.out.println("Script change detected!");
-							notifyReload();
-						}
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
-				}
-			}).start();
-		}
-
-		@Override
-		public String toString() {
-			return mPath;
-		}
-
-	}
-
-	private static String read(InputStream resourceAsStream) {
-		try (final Scanner sc = new Scanner(resourceAsStream)) {
-			return sc.useDelimiter("\\Z").next();
-		}
-	}
 
 	public static void main(String[] args) throws IOException {
 
@@ -106,33 +51,8 @@ public class Editor {
 		final JFrame frame = new JFrame("Kevlanche Engine Editor v."
 				+ Integer.MIN_VALUE);
 
-		final List<Script> sc = new ArrayList<>();
-
-		final GameState state = new GameState(new GdxAssetProvider(new File("C:\\Users\\Anton\\KGE\\SampleGame\\textures")));
-
-		sc.add(new PythonClassPathScript("/python/controller.py", state) {
-
-			@Override
-			public String toString() {
-				return "Basic 2D controller";
-			}
-		});
-
-		sc.add(new PythonClassPathScript("/python/interpolator.py", state) {
-
-			@Override
-			public String toString() {
-				return "Mover";
-			}
-		});
-
-		final ScriptProvider provider = new ScriptProvider() {
-
-			@Override
-			public List<Script> getScripts() {
-				return sc;
-			}
-		};
+		final KgeRuntime runtime = new KgeRuntime();
+		final GameState state = runtime.getState(); 
 
 //		state.addEntity(new DefaultEntity(null));
 
@@ -141,8 +61,8 @@ public class Editor {
 		content.setLayout(new BorderLayout());
 		content.add(new LeftPanel(state), BorderLayout.WEST);
 		content.add(new TopPanel(state), BorderLayout.NORTH);
-		content.add(new CenterPanel(state), BorderLayout.CENTER);
-		content.add(new RightPanel(state, provider), BorderLayout.EAST);
+		content.add(new CenterPanel(runtime), BorderLayout.CENTER);
+		content.add(new RightPanel(state), BorderLayout.EAST);
 		frame.setContentPane(content);
 
 		frame.setLocationByPlatform(true);

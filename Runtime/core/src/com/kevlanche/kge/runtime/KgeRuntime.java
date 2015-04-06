@@ -1,8 +1,6 @@
 package com.kevlanche.kge.runtime;
 
-import java.awt.EventQueue;
-
-import javax.swing.SwingUtilities;
+import java.io.File;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -30,13 +28,14 @@ public class KgeRuntime extends ApplicationAdapter {
 
 	private Stage mStage;
 
-	public KgeRuntime(GameState state) {
-		mState = state;
-	}
-
 	public static World mWorld;
 	Box2DDebugRenderer b2d;
 	float updBuf;
+
+	public KgeRuntime() {
+		mState = new GameState(new GdxAssetProvider(new File(
+				"C:\\Users\\Anton\\KGE\\SampleGame")));
+	}
 
 	@Override
 	public void create() {
@@ -148,9 +147,12 @@ public class KgeRuntime extends ApplicationAdapter {
 		mState.addEntity(new BoxedEntity(null, mWorld));
 	}
 
+	public GameState getState() {
+		return mState;
+	}
+
 	@Override
 	public void render() {
-
 		if (mState.isRunning()) {
 			updBuf += Gdx.graphics.getDeltaTime();
 			final float SIMUL_DT = 1f / 60f;

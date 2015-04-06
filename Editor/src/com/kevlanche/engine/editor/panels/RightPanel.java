@@ -52,7 +52,7 @@ public class RightPanel extends BasePanel implements EntityListener {
 	private final JPanel mAttributeHolder;
 	private Entity mLastEntity;
 
-	public RightPanel(GameState state, final ScriptProvider provider) {
+	public RightPanel(GameState state) {
 		mState = state;
 
 		setBackground(Color.GRAY);
@@ -67,7 +67,7 @@ public class RightPanel extends BasePanel implements EntityListener {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final List<Script> availScripts = provider.getScripts();
+				final List<Script> availScripts = mState.getAssetProvider().getScripts();
 
 				if (availScripts.isEmpty()) {
 					return;
