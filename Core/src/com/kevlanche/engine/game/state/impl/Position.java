@@ -2,20 +2,20 @@ package com.kevlanche.engine.game.state.impl;
 
 import com.kevlanche.engine.game.state.JavaState;
 import com.kevlanche.engine.game.state.var.FloatVariable;
+import com.kevlanche.engine.game.state.var.Variable;
 
-public class Position extends JavaState<Position> {
+public class Position extends JavaState {
 
 	public final FloatVariable x, y;
 
 	public Position() {
-		super("position");
-
-		x = register(new FloatVariable("x", 0));
-		y = register(new FloatVariable("y", 0));
+		this(new FloatVariable("x", 0), new FloatVariable("y", 0));
 	}
 
-	@Override
-	protected Position newInstance() {
-		return new Position();
+	public Position(FloatVariable x, FloatVariable y) {
+		super("position");
+
+		this.x = register(x);
+		this.y = register(y);
 	}
 }

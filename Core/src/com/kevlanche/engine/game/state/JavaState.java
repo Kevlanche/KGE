@@ -1,17 +1,16 @@
 package com.kevlanche.engine.game.state;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.script.CompileException;
-import com.kevlanche.engine.game.state.var.ClonableVariable;
 import com.kevlanche.engine.game.state.var.Variable;
 
-public abstract class JavaState<Type extends JavaState<Type>> implements
-		State {
+public abstract class JavaState implements State {
 
-	protected final List<ClonableVariable> mVars = new ArrayList<>();
+	protected final List<Variable> mVars = new ArrayList<>();
 
 	private final String mName;
 
@@ -34,25 +33,38 @@ public abstract class JavaState<Type extends JavaState<Type>> implements
 	// return ret;
 	// }
 	@Override
-	public Type compile(Entity owner) throws CompileException {
-		Type ret = newInstance();
-		for (int i = 0; i < mVars.size(); i++) {
-			ret.mVars.get(i).copy(mVars.get(i));
-		}
-		return ret;
+	public State compile(Entity owner) throws CompileException {
+		// Type ret = newInstance();
+		// for (int i = 0; i < mVars.size(); i++) {
+		// ret.mVars.get(i).copy(mVars.get(i));
+		// }
+		// return ret;
+		return this;
 	}
-
-	protected abstract Type newInstance();
 
 	@Override
 	public String getName() {
 		return mName;
 	}
 
-	protected <T extends ClonableVariable> T register(T var) {
+	protected <T extends Variable> T register(T var) {
 		mVars.add(var);
-		
+
 		return var;
+	}
+
+	@Override
+	public void saveState() {
+		for (Variable var : mVars) {
+			var.saveState();
+		}
+	}
+
+	@Override
+	public void restoreState() {
+		for (Variable var : mVars) {
+			var.restoreState();
+		}
 	}
 
 	// @Override

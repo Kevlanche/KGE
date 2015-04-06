@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -23,10 +24,10 @@ import com.kevlanche.engine.editor.panels.LeftPanel;
 import com.kevlanche.engine.editor.panels.RightPanel;
 import com.kevlanche.engine.editor.panels.TopPanel;
 import com.kevlanche.engine.game.GameState;
-import com.kevlanche.engine.game.actor.DefaultEntity;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptProvider;
 import com.kevlanche.engine.game.script.impl.PythonScript;
+import com.kevlanche.kge.runtime.GdxAssetProvider;
 
 public class Editor {
 
@@ -107,13 +108,21 @@ public class Editor {
 
 		final List<Script> sc = new ArrayList<>();
 
-		final GameState state = new GameState();
+		final GameState state = new GameState(new GdxAssetProvider(new File("C:\\Users\\Anton\\KGE\\SampleGame\\textures")));
 
 		sc.add(new PythonClassPathScript("/python/controller.py", state) {
 
 			@Override
 			public String toString() {
 				return "Basic 2D controller";
+			}
+		});
+
+		sc.add(new PythonClassPathScript("/python/interpolator.py", state) {
+
+			@Override
+			public String toString() {
+				return "Mover";
 			}
 		});
 
@@ -125,7 +134,7 @@ public class Editor {
 			}
 		};
 
-		state.addEntity(new DefaultEntity(null));
+//		state.addEntity(new DefaultEntity(null));
 
 		final JPanel content = new JPanel();
 		content.setBackground(Color.DARK_GRAY);
@@ -137,7 +146,7 @@ public class Editor {
 		frame.setContentPane(content);
 
 		frame.setLocationByPlatform(true);
-		frame.setSize(800, 600);
+		frame.setSize(1200,800);
 		frame.addWindowListener(new WindowAdapter() {
 
 			@Override

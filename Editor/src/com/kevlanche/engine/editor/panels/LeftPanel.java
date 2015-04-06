@@ -2,6 +2,7 @@ package com.kevlanche.engine.editor.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -10,14 +11,22 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.BevelBorder;
 
+import com.badlogic.gdx.Gdx;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
-import com.kevlanche.engine.game.actor.DefaultEntity;
 import com.kevlanche.engine.game.actor.Entity;
+import com.kevlanche.engine.game.assets.AssetProvider;
+import com.kevlanche.engine.game.assets.Drawable;
+import com.kevlanche.engine.game.state.State;
+import com.kevlanche.engine.game.state.impl.Rendering;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends BasePanel {
@@ -25,6 +34,8 @@ public class LeftPanel extends BasePanel {
 	private final GameState mState;
 
 	private final JPanel mContentPanel;
+
+	private final JPanel mAssetPanel;
 
 	public LeftPanel(GameState state) {
 		setBackground(Color.GRAY);
@@ -42,30 +53,43 @@ public class LeftPanel extends BasePanel {
 		mContentPanel = new JPanel();
 		add(mContentPanel, BorderLayout.NORTH);
 
-		final JPanel btnPanel = new JPanel(new BorderLayout());
-		final JButton remove = new JButton("-");
-		remove.addActionListener(new ActionListener() {
+		// final JPanel btnPanel = new JPanel(new BorderLayout());
+		// final JButton remove = new JButton("-");
+		// remove.addActionListener(new ActionListener() {
+		//
+		// @Override
+		// public void actionPerformed(ActionEvent e) {
+		// final Entity sel = mState.getCurrentSelection();
+		// if (sel != null) {
+		// mState.removeEntity(sel);
+		// }
+		// }
+		// });
+		// btnPanel.add(remove, BorderLayout.WEST);
+		// final JButton add = new JButton("+");
+		// add.addActionListener(new ActionListener() {
+		//
+		// @Override
+		// public void actionPerformed(ActionEvent e) {
+		// Gdx.app.postRunnable(new Runnable() {
+		// @Override
+		// public void run() {
+		// mState.addEntity(new BoxedEntity(null,
+		// KgeRuntime.mWorld));
+		// }
+		// });
+		// }
+		// });
+		// btnPanel.add(add, BorderLayout.EAST);
+		// add(btnPanel, BorderLayout.SOUTH);
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				final Entity sel = mState.getCurrentSelection();
-				if (sel != null) {
-					mState.removeEntity(sel);
-				}
-			}
-		});
-		btnPanel.add(remove, BorderLayout.WEST);
-		final JButton add = new JButton("+");
-		add.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				final Entity actor = new DefaultEntity(null);
-				mState.addEntity(actor);
-			}
-		});
-		btnPanel.add(add, BorderLayout.EAST);
-		add(btnPanel, BorderLayout.SOUTH);
+		mAssetPanel = new JPanel();
+		mAssetPanel.setLayout(new BoxLayout(mAssetPanel, BoxLayout.Y_AXIS));
+		final JScrollPane assetPane = new JScrollPane(mAssetPanel);
+		final Dimension dimen = new Dimension(20, 300);
+		assetPane.setMinimumSize(dimen);
+		assetPane.setPreferredSize(dimen);
+		add(assetPane, BorderLayout.SOUTH);
 
 		buildUI();
 	}
@@ -96,6 +120,42 @@ public class LeftPanel extends BasePanel {
 			mContentPanel.add(actorPanel, gbc);
 			gbc.gridy++;
 		}
+
+		mAssetPanel.removeAll();
+		final AssetProvider provider = mState.getAssetProvider();
+		for (Drawable asset : provider.getDrawables()) {
+			final JPanel repr = new JPanel();
+			repr.setLayout(new BorderLayout());
+			final JButton btn = new JButton(asset.getName());
+			btn.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					final Entity focus = mState.getCurrentSelection();
+					if (focus != null) {
+						Gdx.app.postRunnable(new Runnable() {
+
+							@Override
+							public void run() {
+								for (State state : focus.getStates()) {
+									if (state instanceof Rendering) {
+										((Rendering) state).texture.set(asset);
+										break;
+									}
+								}
+
+							}
+						});
+					}
+				}
+			});
+			repr.add(btn, BorderLayout.CENTER);
+			repr.setBorder(BorderFactory
+					.createSoftBevelBorder(BevelBorder.RAISED));
+
+			mAssetPanel.add(repr);
+		}
+
 		revalidate();
 		repaint();
 	}

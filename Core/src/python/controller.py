@@ -3,44 +3,45 @@ from kge import *
 
 # Keep python scripts write only?
 
-dx = 0.0
-dy = 0.0
-maxSpeed = 10.0
-speedOnRelease = 0
-timeOfRelease = 0
-
-FULL_STOP_TIME = 0.55
 
 def clamp(val, minVal, maxVal):
 	return max(minVal, min(maxVal, val))
 
 def tick():
-	mv = kge.time.dt * 30
+	up = kge.input.didPress(kge.input.UP)
+	down = kge.input.didPress(kge.input.DOWN)
+	left = kge.input.didPress(kge.input.LEFT)
+	right = kge.input.didPress(kge.input.RIGHT)
+	if up or down or left or right:
+		mvx = 0
+		if right:
+			mvx = 1
+		elif left:
+			mvx = -1
+		mvy = 0
+		if up:
+			mvy = 1
+		elif down:
+			mvy = -1
 
-	global dx
-	global dy
 
-	if kge.input.isPressing(kge.input.RIGHT):
-		print("isRight")
-		dx += mv
-	elif kge.input.isPressing(kge.input.LEFT):
-		dx -= mv
-	elif kge.input.didRelease(kge.input.LEFT) or kge.input.didRelease(kge.input.RIGHT):
-		global speedOnRelease
-		global timeOfRelease
-		speedOnRelease = dx
-		timeOfRelease = kge.time.gameTime
-	else:
-		timeSinceRelease = kge.time.gameTime - timeOfRelease
-		dx = speedOnRelease * max(0, FULL_STOP_TIME - timeSinceRelease)
-		
-	if kge.input.didPress(kge.input.SPACE):
-		dy = 15
-	elif not kge.input.isPressing(kge.input.SPACE):
-		dy -= mv
-	
-	dx = clamp(dx, -maxSpeed, maxSpeed)
-	dy = clamp(dy, -maxSpeed, maxSpeed)
+		owner.finishInterpolation(setPos)
+		owner.interpolate({
+				'start' : (position.x, position.y),
+				'end' : (position.x + mvx, position.y + mvy),
+				'duration' : 0.25,
+				'callback': setPos
+			})
+		#ease(position.y, 1.0, 15);
 
-	position.x += dx * kge.time.dt
-	position.y = max(position.y + dy * kge.time.dt, 0)
+
+def setX(value):
+	print("Set x : " + str(value))
+
+def setY(value):
+	position.y = value
+	print("Set y : " + str(value))
+
+def setPos(x, y):
+	position.x = x
+	position.y = y

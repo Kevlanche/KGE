@@ -1,58 +1,53 @@
 package com.kevlanche.engine.game;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.List;
-import java.util.Observable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.JOptionPane;
-import javax.swing.Timer;
+import javax.swing.SwingUtilities;
 
 import com.kevlanche.engine.game.actor.Entity;
+import com.kevlanche.engine.game.assets.AssetProvider;
 import com.kevlanche.engine.game.script.CompileException;
 
 public class GameState {
-	public GameState() {
-		new Timer(15, new ActionListener() {
 
-			long lastTime = System.currentTimeMillis();
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				final long currTime = System.currentTimeMillis();
-				final long dt = currTime - lastTime;
-
-				Kge kge = Kge.getInstance();
-				kge.time.currentTimeMillis = System.currentTimeMillis();
-				if (mIsRunning) {
-					final float fdt = dt / 1000f;
-					kge.time.gameTime += fdt;
-					kge.time.dt = fdt;
-
-					for (Entity actor : mAllActors) {
-						try {
-							actor.tick();
-						} catch (CompileException e1) {
-							mIsRunning = false;
-							e1.printStackTrace();
-							JOptionPane.showMessageDialog(null,
-									"Compile errorz! " + e1.toString());
-						}
-					}
-
-					kge.input.afterFrame();
-				}
-
-				lastTime = currTime;
-			}
-		}).start();
-	}
-
+	private AssetProvider mAssetProvider;
 	private boolean mIsRunning = false;
 	private List<Entity> mAllActors = new CopyOnWriteArrayList<>();
 	private List<GameStateObserver> mObservers = new CopyOnWriteArrayList<>();
 	private Entity mCurrentSelection = null;
+
+	public GameState(AssetProvider provider) {
+		mAssetProvider = provider;
+	}
+
+	public void tick(float dt) {
+		Kge kge = Kge.getInstance();
+		kge.time.currentTimeMillis = System.currentTimeMillis();
+		if (mIsRunning) {
+			kge.time.gameTime += dt;
+			kge.time.dt = dt;
+
+			for (Entity actor : mAllActors) {
+				try {
+					actor.tick();
+				} catch (CompileException e1) {
+					mIsRunning = false;
+					e1.printStackTrace();
+					JOptionPane.showMessageDialog(null,
+							"Compile errorz! " + e1.toString());
+				}
+			}
+
+			kge.input.afterFrame();
+		}
+	}
+
+	public AssetProvider getAssetProvider() {
+		return mAssetProvider;
+	}
 
 	public boolean isRunning() {
 		return mIsRunning;
@@ -70,11 +65,7 @@ public class GameState {
 
 		for (Entity a : mAllActors) {
 			if (mIsRunning) {
-				try {
-					a.saveState();
-				} catch (CompileException e) {
-					e.printStackTrace();
-				}
+				a.saveState();
 			} else {
 				a.restoreState();
 			}
@@ -123,6 +114,17 @@ public class GameState {
 	}
 
 	public void setCurrentSelection(Entity currentSelection) {
+
+		if (!SwingUtilities.isEventDispatchThread()) {
+			SwingUtilities.invokeLater(new Runnable() {
+
+				@Override
+				public void run() {
+					setCurrentSelection(currentSelection);
+				}
+			});
+			return;
+		}
 		if (mCurrentSelection == currentSelection) {
 			return;
 		}

@@ -1,20 +1,12 @@
 package com.kevlanche.engine.game.state.var;
 
-public class StringVariable extends AbstractVariable implements
-		ClonableVariable {
-
-	private final String mName;
+public class StringVariable extends AbstractVariable {
 
 	private String mValue;
 
 	public StringVariable(String name, String defaultValue) {
-		mName = name;
+		super(name);
 		mValue = defaultValue;
-	}
-
-	@Override
-	public String getName() {
-		return mName;
 	}
 
 	@Override
@@ -36,11 +28,16 @@ public class StringVariable extends AbstractVariable implements
 	public void set(float value) throws TypeException {
 		set(Float.toString(value));
 	}
+	
+	@Override
+	public void set(boolean value) throws TypeException {
+		set(Boolean.toString(value));
+	}
 
 	@Override
 	public int asInt() throws TypeException {
 		try {
-			return Integer.parseInt(mValue);
+			return Integer.parseInt(asString());
 		} catch (NumberFormatException e) {
 			throw new TypeException(e);
 		}
@@ -49,19 +46,19 @@ public class StringVariable extends AbstractVariable implements
 	@Override
 	public float asFloat() throws TypeException {
 		try {
-			return Float.parseFloat(mValue);
+			return Float.parseFloat(asString());
 		} catch (NumberFormatException e) {
 			throw new TypeException(e);
 		}
+	}
+	
+	@Override
+	public boolean asBool() throws TypeException {
+		return Boolean.parseBoolean(asString());
 	}
 
 	@Override
 	public void set(String value) throws TypeException {
 		mValue = value;
-	}
-
-	@Override
-	public ClonableVariable createCopy() {
-		return new StringVariable(mName, mValue);
 	}
 }

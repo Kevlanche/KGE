@@ -1,5 +1,6 @@
 package com.kevlanche.engine.game.actor;
 
+import com.kevlanche.engine.game.state.impl.Physics;
 import com.kevlanche.engine.game.state.impl.Position;
 import com.kevlanche.engine.game.state.impl.Rotation;
 import com.kevlanche.engine.game.state.impl.Size;
@@ -18,6 +19,7 @@ public class DefaultEntity extends BaseEntity {
 		addState(new Position());
 		addState(new Size());
 		addState(new Rotation());
+		addState(new Physics());
 	}
 	
 	@Override

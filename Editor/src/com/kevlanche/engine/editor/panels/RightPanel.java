@@ -2,6 +2,7 @@ package com.kevlanche.engine.editor.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -13,24 +14,28 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
 import com.kevlanche.engine.game.actor.Entity;
+import com.kevlanche.engine.game.actor.EntityListener;
 import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptProvider;
 import com.kevlanche.engine.game.state.State;
@@ -40,11 +45,12 @@ import com.kevlanche.engine.game.state.var.ValueType;
 import com.kevlanche.engine.game.state.var.Variable;
 
 @SuppressWarnings("serial")
-public class RightPanel extends BasePanel {
+public class RightPanel extends BasePanel implements EntityListener {
 
 	private GameState mState;
 	Timer mPoller = null;
 	private final JPanel mAttributeHolder;
+	private Entity mLastEntity;
 
 	public RightPanel(GameState state, final ScriptProvider provider) {
 		mState = state;
@@ -94,20 +100,24 @@ public class RightPanel extends BasePanel {
 
 			@Override
 			public void onGenericChange() {
-				if (mPoller != null) {
-					mPoller.stop();
-				}
-				mAttributeHolder.removeAll();
 				buildUi();
-				revalidate();
-				repaint();
 			}
 		});
 		buildUi();
 	}
 
 	private void buildUi() {
+		if (mPoller != null) {
+			mPoller.stop();
+		}
+		mAttributeHolder.removeAll();
+		
+		if (mLastEntity != null) {
+			mLastEntity.removeListener(this);
+		}
+
 		final Entity actor = mState.getCurrentSelection();
+		mLastEntity = actor;
 		if (actor == null) {
 			mAttributeHolder.setLayout(new BorderLayout());
 			mAttributeHolder.add(new JPanel() {
@@ -120,6 +130,8 @@ public class RightPanel extends BasePanel {
 				};
 			}, BorderLayout.CENTER);
 			return;
+		} else {
+			mLastEntity.addListener(this);
 		}
 		mAttributeHolder.setLayout(new GridBagLayout());
 
@@ -178,6 +190,9 @@ public class RightPanel extends BasePanel {
 		}
 		mAttributeHolder.add(instanceHolder, rootGbc);
 		rootGbc.gridy++;
+
+		revalidate();
+		repaint();
 	}
 
 	private void addState(final GridBagConstraints rootGbc, final State state) {
@@ -192,74 +207,94 @@ public class RightPanel extends BasePanel {
 				new Insets(2, 2, 2, 2), 2, 5);
 
 		List<Variable> vars = state.getVariables();
-		List<JTextField> fields = new ArrayList<>();
+		List<Component> fields = new ArrayList<>();
 		AtomicBoolean ignoreUpdates = new AtomicBoolean(false);
 		for (final Variable var : vars) {
 
-			final JTextField jtf = new JTextField(5);
-			fields.add(jtf);
+			final Component editor;
 
-			jtf.getDocument().addDocumentListener(new DocumentListener() {
+			if (var.getType() == ValueType.BOOL) {
+				JCheckBox cb = new JCheckBox();
+				editor = cb;
 
-				@Override
-				public void removeUpdate(DocumentEvent e) {
-					update();
-				}
+				cb.setSelected(var.asBool());
 
-				@Override
-				public void insertUpdate(DocumentEvent e) {
-					update();
-				}
-
-				@Override
-				public void changedUpdate(DocumentEvent e) {
-					update();
-				}
-
-				void update() {
-					if (!ignoreUpdates.get()) {
-						try {
-							final float f = Float.parseFloat(jtf.getText());
-							var.set(f);
-						} catch (NumberFormatException e) {
-							// Ignore
-						}
-					}
-				}
-			});
-			if (var.getType() == ValueType.INTEGER
-					|| var.getType() == ValueType.FLOAT) {
-				final Consumer<Integer> changeNum = new Consumer<Integer>() {
+				cb.addChangeListener(new ChangeListener() {
 
 					@Override
-					public void accept(Integer t) {
-						var.set(var.asFloat() + t);
+					public void stateChanged(ChangeEvent e) {
+						var.set(cb.isSelected());
 					}
-				};
-				jtf.addKeyListener(new KeyAdapter() {
+				});
 
-					public void keyPressed(KeyEvent e) {
-						switch (e.getKeyCode()) {
-						case KeyEvent.VK_UP:
-							changeNum.accept(1);
-							break;
-						case KeyEvent.VK_DOWN:
-							changeNum.accept(-1);
-							break;
+			} else {
+				JTextField jtf = new JTextField(5);
+				editor = jtf;
 
+				jtf.getDocument().addDocumentListener(new DocumentListener() {
+
+					@Override
+					public void removeUpdate(DocumentEvent e) {
+						update();
+					}
+
+					@Override
+					public void insertUpdate(DocumentEvent e) {
+						update();
+					}
+
+					@Override
+					public void changedUpdate(DocumentEvent e) {
+						update();
+					}
+
+					void update() {
+						if (!ignoreUpdates.get()) {
+							try {
+								final float f = Float.parseFloat(jtf.getText());
+								var.set(f);
+							} catch (NumberFormatException e) {
+								// Ignore
+							}
+						}
+					}
+				});
+				if (var.getType() == ValueType.INTEGER
+						|| var.getType() == ValueType.FLOAT) {
+					final Consumer<Integer> changeNum = new Consumer<Integer>() {
+
+						@Override
+						public void accept(Integer t) {
+							var.set(var.asFloat() + t);
 						}
 					};
-				});
-				jtf.addMouseWheelListener(new MouseWheelListener() {
+					jtf.addKeyListener(new KeyAdapter() {
 
-					@Override
-					public void mouseWheelMoved(MouseWheelEvent arg0) {
-						int uts = arg0.getUnitsToScroll();
-						changeNum.accept(-uts);
-						jtf.setText(var.asString());
-					}
-				});
+						public void keyPressed(KeyEvent e) {
+							switch (e.getKeyCode()) {
+							case KeyEvent.VK_UP:
+								changeNum.accept(1);
+								break;
+							case KeyEvent.VK_DOWN:
+								changeNum.accept(-1);
+								break;
+
+							}
+						};
+					});
+					jtf.addMouseWheelListener(new MouseWheelListener() {
+
+						@Override
+						public void mouseWheelMoved(MouseWheelEvent arg0) {
+							int uts = arg0.getUnitsToScroll();
+							changeNum.accept(-uts);
+							jtf.setText(var.asString());
+						}
+					});
+				}
 			}
+			fields.add(editor);
+
 			final JPanel varHolder = new JPanel();
 			varHolder.setBackground(Color.GRAY);
 			varHolder.setBorder(BorderFactory
@@ -268,7 +303,7 @@ public class RightPanel extends BasePanel {
 			varHolder.add(
 					new JLabel(var.getName() + " <" + var.getType() + ">"),
 					BorderLayout.WEST);
-			varHolder.add(jtf, BorderLayout.EAST);
+			varHolder.add(editor, BorderLayout.EAST);
 
 			instanceHolder.add(varHolder, gbc);
 			gbc.gridy++;
@@ -280,15 +315,24 @@ public class RightPanel extends BasePanel {
 			public void actionPerformed(ActionEvent e) {
 				ignoreUpdates.set(true);
 				for (int i = 0; i < fields.size(); i++) {
-					final JTextField jtf = fields.get(i);
-					if (jtf.hasFocus()) {
-						continue;
-					}
 					final Variable var = vars.get(i);
+					final Component comp = fields.get(i);
+					if (comp instanceof JTextField) {
+						if (comp.hasFocus()) {
+							continue;
+						}
 
-					final String newVal = var.asString();
-					if (!newVal.equals(jtf.getText())) {
-						jtf.setText(newVal);
+						final String newVal = var.asString();
+						final JTextField jtf = (JTextField) comp;
+						if (!newVal.equals(jtf.getText())) {
+							jtf.setText(newVal);
+						}
+					} else if (comp instanceof JCheckBox) {
+						boolean sel = var.asBool();
+						final JCheckBox jcb = (JCheckBox) comp;
+						if (sel != jcb.isSelected()) {
+							jcb.setSelected(sel);
+						}
 					}
 				}
 				ignoreUpdates.set(false);
@@ -298,5 +342,21 @@ public class RightPanel extends BasePanel {
 
 		mAttributeHolder.add(instanceHolder, rootGbc);
 		rootGbc.gridy++;
+		
+		revalidate();
+		repaint();
+	}
+
+	@Override
+	public void onEntityChanged(Entity entity) {
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				System.out.println("onEntityChanged??? "
+						+ Thread.currentThread());
+				buildUi();
+			}
+		});
 	}
 }

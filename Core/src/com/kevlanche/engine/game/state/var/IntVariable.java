@@ -1,20 +1,12 @@
 package com.kevlanche.engine.game.state.var;
 
-
-public class IntVariable extends AbstractVariable implements ClonableVariable {
-
-	private final String mName;
+public class IntVariable extends AbstractVariable {
 
 	private int mValue;
 
 	public IntVariable(String name, int defaultValue) {
-		mName = name;
+		super(name);
 		mValue = defaultValue;
-	}
-
-	@Override
-	public String getName() {
-		return mName;
 	}
 
 	@Override
@@ -29,17 +21,22 @@ public class IntVariable extends AbstractVariable implements ClonableVariable {
 
 	@Override
 	public float asFloat() throws TypeException {
-		return mValue;
+		return asInt();
 	}
 
 	@Override
 	public String asString() throws TypeException {
-		return Integer.toString(mValue);
+		return Integer.toString(asInt());
+	}
+
+	@Override
+	public boolean asBool() throws TypeException {
+		return asInt() != 0;
 	}
 
 	@Override
 	public void set(int value) throws TypeException {
-		mValue = value;
+		set((float) value);
 	}
 
 	@Override
@@ -57,7 +54,7 @@ public class IntVariable extends AbstractVariable implements ClonableVariable {
 	}
 
 	@Override
-	public ClonableVariable createCopy() {
-		return new IntVariable(mName, mValue);
+	public void set(boolean value) throws TypeException {
+		set(value ? 1 : 0);
 	}
 }

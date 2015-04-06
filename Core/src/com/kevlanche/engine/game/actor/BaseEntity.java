@@ -39,12 +39,20 @@ public class BaseEntity implements Entity {
 	private class ActiveState {
 		public final List<State> states = new ArrayList<>();
 
-		ActiveState createCopy() throws CompileException {
+		ActiveState createCopy() {
 			final ActiveState ret = new ActiveState();
+			ret.states.addAll(states);
+
 			for (State state : states) {
-				ret.states.add(state.compile(BaseEntity.this));
+				state.saveState();
 			}
 			return ret;
+		}
+
+		void restore() {
+			for (State state : states) {
+				state.restoreState();
+			}
 		}
 	}
 
@@ -166,7 +174,7 @@ public class BaseEntity implements Entity {
 	}
 
 	@Override
-	public void saveState() throws CompileException {
+	public void saveState() {
 		mStack.add(mCurrentState.createCopy());
 		for (ScriptContainer sc : mScripts) {
 			sc.compiled = null;
@@ -182,6 +190,7 @@ public class BaseEntity implements Entity {
 			return;
 		}
 		mCurrentState = mStack.removeLast();
+		mCurrentState.restore();
 		notifyChange();
 	}
 }

@@ -3,18 +3,33 @@ package com.kevlanche.engine.game.state.impl;
 import com.kevlanche.engine.game.state.JavaState;
 import com.kevlanche.engine.game.state.var.FloatVariable;
 
-public class Rotation extends JavaState<Rotation> {
+public class Rotation extends JavaState {
 
-	public final FloatVariable degrees;
+	public final FloatVariable degrees, anchorX, anchorY;
 
 	public Rotation() {
+		this(new Degrees());
+	}
+
+	public Rotation(Degrees degrees) {
+		this(degrees, new FloatVariable("anchorX", 0), new FloatVariable(
+				"anchorY", 0));
+	}
+
+	public Rotation(Degrees degrees, FloatVariable anchorX,
+			FloatVariable anchorY) {
 		super("degrees");
 
-		degrees = register(new FloatVariable("degrees", 0));
+		this.degrees = register(degrees);
+		this.anchorX = register(anchorX);
+		this.anchorY = register(anchorY);
 	}
 
-	@Override
-	protected Rotation newInstance() {
-		return new Rotation();
+	public static class Degrees extends FloatVariable {
+
+		public Degrees() {
+			super("degrees", 0);
+		}
 	}
+
 }
