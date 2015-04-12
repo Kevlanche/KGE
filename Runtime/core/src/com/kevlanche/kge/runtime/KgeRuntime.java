@@ -7,7 +7,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
@@ -19,9 +18,10 @@ import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
+import com.kevlanche.engine.game.Kge;
+import com.kevlanche.engine.game.Kge.Graphics;
 import com.kevlanche.engine.game.actor.Entity;
-import com.kevlanche.kge.runtime.entity.Box2dEntity;
-import com.kevlanche.kge.runtime.entity.DefaultEntity;
+import com.kevlanche.engine.game.state.impl.Camera;
 
 public class KgeRuntime extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -33,6 +33,9 @@ public class KgeRuntime extends ApplicationAdapter {
 	public static World mWorld;
 	Box2DDebugRenderer b2d;
 	float updBuf;
+
+	private Camera mDefaultCamera;
+	private CamController mCamController;
 
 	public KgeRuntime() {
 		mState = new GameState(new GdxAssetProvider(new File(
@@ -46,7 +49,10 @@ public class KgeRuntime extends ApplicationAdapter {
 		((GdxAssetProvider) mState.getAssetProvider()).doLoad();
 
 		mStage = new Stage(new ScalingViewport(Scaling.stretch, 8f, 6f));
-		mStage.addActor(new Grid());
+
+		mDefaultCamera = new Camera();
+		mCamController = new CamController(mState, mStage, mDefaultCamera);
+		mStage.addActor(new Grid(mState, mDefaultCamera));
 
 		final Group actorGroup = new Group();
 		mStage.addActor(actorGroup);
@@ -106,12 +112,27 @@ public class KgeRuntime extends ApplicationAdapter {
 					}
 				});
 			}
+
+			@Override
+			public void onRunningChanged() {
+				if (mState.isRunning()) {
+					mCamController.reset();
+				} else {
+					// Triggers an onChanged & updates the camera to editor
+					// state
+					mDefaultCamera.x.copy(mDefaultCamera.x);
+				}
+			}
 		});
 
 		final InputMultiplexer input = new InputMultiplexer(
 				new KgeInputMapper(), mStage) {
 			@Override
 			public boolean scrolled(int amount) {
+				if (mState.isRunning()) {
+					return false;
+				}
+
 				for (Actor actor : actorGroup.getChildren()) {
 					if (actor instanceof EntityActor) {
 						final EntityActor ent = (EntityActor) actor;
@@ -121,16 +142,9 @@ public class KgeRuntime extends ApplicationAdapter {
 						}
 					}
 				}
-				final OrthographicCamera og = (OrthographicCamera) mStage
-						.getCamera();
-				og.zoom = Math
-						.max(0.1f, Math.min(2.0f, og.zoom + amount / 10f));
+				mDefaultCamera.zoom.set(mDefaultCamera.zoom.asFloat() + amount
+						/ 10f);
 				return true;
-			}
-
-			@Override
-			public boolean mouseMoved(int screenX, int screenY) {
-				return super.mouseMoved(screenX, screenY);
 			}
 		};
 
@@ -164,6 +178,8 @@ public class KgeRuntime extends ApplicationAdapter {
 
 	@Override
 	public void render() {
+		mCamController.tick();
+
 		if (mState.isRunning()) {
 			updBuf += Gdx.graphics.getDeltaTime();
 			final float SIMUL_DT = 1f / 60f;
@@ -188,9 +204,13 @@ public class KgeRuntime extends ApplicationAdapter {
 
 	@Override
 	public void resize(int width, int height) {
-		mStage.getViewport()
-				.setWorldSize(width / PTM_RATIO, height / PTM_RATIO);
-		mStage.getViewport().setScreenSize(width, height);
-		mStage.getViewport().apply(false);
+		final Graphics kgeGraphics = Kge.getInstance().graphics;
+		kgeGraphics.width = width;
+		kgeGraphics.height = height;
+
+		mDefaultCamera.width.set(width / PTM_RATIO);
+		mDefaultCamera.height.set(height / PTM_RATIO);
+
+		mCamController.tick();
 	}
 }

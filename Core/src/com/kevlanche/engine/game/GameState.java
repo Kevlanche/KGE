@@ -1,5 +1,6 @@
 package com.kevlanche.engine.game;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -10,6 +11,7 @@ import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.actor.EntityDefinition;
 import com.kevlanche.engine.game.assets.AssetProvider;
 import com.kevlanche.engine.game.script.CompileException;
+import com.kevlanche.engine.game.state.State;
 
 public class GameState {
 
@@ -70,7 +72,9 @@ public class GameState {
 				a.restoreState();
 			}
 		}
-
+		for (GameStateObserver gso : mObservers) {
+			gso.onRunningChanged();
+		}
 		triggerOnChanged();
 	}
 
@@ -84,6 +88,29 @@ public class GameState {
 
 	public List<Entity> getEntities() {
 		return mAllActors;
+	}
+
+	public List<State> getStatesByName(String stateName) {
+		final List<State> ret = new ArrayList<>();
+		for (Entity e : mAllActors) {
+
+			for (State state : e.getStates()) {
+				if (state.getName().equals(stateName)) {
+					ret.add(state);
+				}
+			}
+		}
+		return ret;
+	}
+
+	public List<Entity> getEntitiesByClass(String className) {
+		final List<Entity> ret = new ArrayList<>();
+		for (Entity e : mAllActors) {
+			if (e.getClassName().equals(className)) {
+				ret.add(e);
+			}
+		}
+		return ret;
 	}
 
 	public void addEntity(Entity entity) {

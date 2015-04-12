@@ -25,11 +25,9 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.JsonWriter;
-import com.badlogic.gdx.utils.JsonValue.ValueType;
 import com.badlogic.gdx.utils.JsonWriter.OutputType;
 import com.kevlanche.engine.game.EntityLoader;
 import com.kevlanche.engine.game.GameState;
@@ -45,6 +43,7 @@ import com.kevlanche.engine.game.script.ScriptDefinition;
 import com.kevlanche.engine.game.script.impl.PythonScript;
 import com.kevlanche.engine.game.state.JavaState;
 import com.kevlanche.engine.game.state.State;
+import com.kevlanche.engine.game.state.impl.Camera;
 import com.kevlanche.engine.game.state.impl.Physics;
 import com.kevlanche.engine.game.state.impl.Position;
 import com.kevlanche.engine.game.state.impl.Rendering;
@@ -217,6 +216,18 @@ public class GdxAssetProvider implements AssetProvider {
 			@Override
 			public State createInstance() {
 				return new Size();
+			}
+		});
+		mStateDefinitions.add(new StateDefinition() {
+
+			@Override
+			public String getName() {
+				return Camera.NAME;
+			}
+
+			@Override
+			public State createInstance() {
+				return new Camera();
 			}
 		});
 

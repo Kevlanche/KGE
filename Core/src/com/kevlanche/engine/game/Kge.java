@@ -48,11 +48,16 @@ public class Kge {
 			didPress = 0;
 			didRelease = 0;
 		}
-		
 	}
+	public static class Graphics {
+		public int width;
+		public int height;
+	}
+
 
 	public Time time = new Time();
 	public Input input = new Input();
+	public Graphics graphics = new Graphics();
 	
 	private static Kge sInstance = new Kge();
 	

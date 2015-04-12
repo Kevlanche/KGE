@@ -8,10 +8,16 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.kevlanche.engine.game.GameState;
+import com.kevlanche.engine.game.state.impl.Camera;
 
 public class Grid extends Actor {
 
-	public Grid() {
+	private final Camera mCamState;
+	
+	public Grid(final GameState gameState, Camera camState) {
+		mCamState = camState;
+		
 		addListener(new InputListener() {
 
 			Vector2 touch = new Vector2();
@@ -19,6 +25,9 @@ public class Grid extends Actor {
 			@Override
 			public boolean touchDown(InputEvent event, float x, float y,
 					int pointer, int button) {
+				if (gameState.isRunning()) {
+					return false;
+				}
 				touch.set(x, y);
 				return true;
 			}
@@ -28,10 +37,10 @@ public class Grid extends Actor {
 					int pointer) {
 				final float dx = x - touch.x;
 				final float dy = y - touch.y;
-				getStage().getCamera().translate(-dx, -dy, 0);
-				getStage().getViewport().apply(false);
+				
+				mCamState.x.set(mCamState.x.asFloat() - dx);
+				mCamState.y.set(mCamState.y.asFloat() - dy);
 			}
-
 		});
 	}
 

@@ -94,139 +94,6 @@ public class EntityActor extends Group {
 			}
 		});
 
-		// addListener(new InputListener() {
-		//
-		// final Vector2 touch = new Vector2();
-		// final Vector2 tmp = new Vector2();
-		//
-		// final Vector2 attrTarget = new Vector2();
-		//
-		// final Vector2 previousFrame = new Vector2();
-		// Variable xAttr, yAttr;
-		//
-		// boolean isAnchor = false;
-		//
-		// boolean changeInWorldSpace;
-		//
-		// void transFromLocal(Vector2 vec) {
-		// final Group par = getParent();
-		// // if (par != null) {
-		// // localToParentCoordinates(vec);
-		// // } else {
-		// localToStageCoordinates(vec);
-		// // }
-		// }
-		//
-		// @Override
-		// public boolean touchDown(InputEvent event, float x, float y,
-		// int pointer, int button) {
-		// if (mState.isRunning()) {
-		// return false;
-		// }
-		// if (isBeingPressed()) {
-		// return false;
-		// }
-		//
-		// mIsBeingPressed = true;
-		// touch.set(x, y);
-		// transFromLocal(touch);
-		// previousFrame.set(touch);
-		//
-		// isAnchor = mPhysical.rotation != null
-		// && (button == Buttons.MIDDLE);
-		// changeInWorldSpace = false;
-		// if (mPhysical != null) {
-		// if (button == Buttons.RIGHT && mPhysical.size != null) {
-		// xAttr = mPhysical.size.width;
-		// yAttr = mPhysical.size.height;
-		// } else {
-		// if (isAnchor) {
-		// xAttr = mPhysical.rotation.anchorX;
-		// yAttr = mPhysical.rotation.anchorY;
-		// } else {
-		// xAttr = mPhysical.position.x;
-		// yAttr = mPhysical.position.y;
-		// }
-		// changeInWorldSpace = true;
-		// }
-		// attrTarget.set(xAttr.asFloat(), yAttr.asFloat());
-		//
-		// if (mPhysical.physics != null) {
-		// mPhysical.physics.staticBody.saveState();
-		// mPhysical.physics.staticBody.set(true);
-		// }
-		// } else {
-		// xAttr = null;
-		// yAttr = null;
-		// }
-		// game.setCurrentSelection(mEntity);
-		// return true;
-		// }
-		//
-		// @Override
-		// public void touchDragged(InputEvent event, float x, float y,
-		// int pointer) {
-		// previousFrame.set(touch);
-		// tmp.set(x, y);
-		// transFromLocal(tmp);
-		// float diffx = touch.x - tmp.x;
-		// float diffy = touch.y - tmp.y;
-		// touch.set(tmp);
-		//
-		// tmp.set(diffx, diffy);
-		// stageToLocalCoordinates(tmp);
-		// diffx = tmp.x;
-		// diffy = tmp.y;
-		//
-		// System.out.println(diffx + ";" + diffy);
-		//
-		// if (isAnchor) {
-		// float pdx = diffx;
-		// float pdy = diffy;
-		// final Vector2 diff = new Vector2(-diffx, -diffy);
-		// diff.rotate(-mPhysical.rotation.degrees.asFloat());
-		// diffx = -diff.x;
-		// diffy = -diff.y;
-		//
-		// mPhysical.position.x.set(mPhysical.position.x.asFloat()
-		// + (diffx - pdx));
-		// mPhysical.position.y.set(mPhysical.position.y.asFloat()
-		// + (diffy - pdy));
-		// }
-		//
-		// if (changeInWorldSpace || mPhysical.rotation == null) {
-		// attrTarget.add(-diffx, -diffy);
-		// } else {
-		// final Vector2 diff = new Vector2(-diffx, -diffy);
-		// diff.rotate(-mPhysical.rotation.degrees.asFloat());
-		// attrTarget.add(diff);
-		// }
-		//
-		// if (xAttr != null && yAttr != null) {
-		// if (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT)) {
-		// xAttr.set(Math.round(attrTarget.x));
-		// yAttr.set(Math.round(attrTarget.y));
-		// } else {
-		// xAttr.set(attrTarget.x);
-		// yAttr.set(attrTarget.y);
-		// }
-		// }
-		// }
-		//
-		// @Override
-		// public void touchUp(InputEvent event, float x, float y,
-		// int pointer, int button) {
-		// mIsBeingPressed = false;
-		// float dx = previousFrame.x - touch.x;
-		// float dy = previousFrame.y - touch.y;
-		// if (mPhysical != null && mPhysical.physics != null) {
-		// mPhysical.physics.velocityX.set(dx);
-		// mPhysical.physics.velocityY.set(dy);
-		// mPhysical.physics.staticBody.restoreState();
-		// }
-		// }
-		// });
-
 		addListener(new InputListener() {
 
 			Vector2 last = new Vector2();
@@ -236,14 +103,14 @@ public class EntityActor extends Group {
 			Vector2 target = new Vector2();
 
 			Actor transformSrc;
-			
+
 			@Override
 			public boolean touchDown(InputEvent event, float x, float y,
 					int pointer, int button) {
 				if (mState.isRunning()) {
 					return false;
 				}
-				
+
 				if (isBeingPressed()) {
 					return false;
 				}
@@ -253,12 +120,8 @@ public class EntityActor extends Group {
 				if (button == Buttons.RIGHT) {
 					xattr = mPhysical.size.width;
 					yattr = mPhysical.size.height;
-					
+
 					transformSrc = null;
-//					transformSrc = EntityActor.this;
-//					while (transformSrc.getParent() != null) {
-//						transformSrc = transformSrc.getParent();
-//					}
 				} else {
 					xattr = mPhysical.position.x;
 					yattr = mPhysical.position.y;
@@ -267,9 +130,9 @@ public class EntityActor extends Group {
 				target.set(xattr.asFloat(), yattr.asFloat());
 
 				last.set(x, y);
-				
+
 				doTrans(last);
-				 game.setCurrentSelection(mEntity);
+				game.setCurrentSelection(mEntity);
 				return true;
 			}
 
@@ -287,12 +150,8 @@ public class EntityActor extends Group {
 				float dx = tmp.x - last.x;
 				float dy = tmp.y - last.y;
 				last.set(tmp);
-				
-//				tmp.set(getX() + dx, getY() + dy);
-//				transformSrc.stageToLocalCoordinates(tmp);
-//				target.add(tmp);
-				
-				target.add(dx,dy);
+
+				target.add(dx, dy);
 
 				if (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT)) {
 					xattr.set(Math.round(target.x));
@@ -301,7 +160,6 @@ public class EntityActor extends Group {
 					xattr.set(target.x);
 					yattr.set(target.y);
 				}
-				System.out.println(xattr.asFloat());
 			}
 
 			@Override
@@ -345,7 +203,7 @@ public class EntityActor extends Group {
 
 				batch.draw(region, getX(), getY(), getOriginX(), getOriginY(),
 						getWidth(), getHeight(), getScaleX(), getScaleY(),
-						getRotation(), false);
+						getRotation());
 			}
 
 			super.draw(batch, parentAlpha);
@@ -371,11 +229,6 @@ public class EntityActor extends Group {
 		super.act(delta);
 
 		updateLocationStuff();
-
-		if (mState.isRunning()) {
-			getStage().getCamera().position.set(getX(), getY(), 0f);
-			getStage().getCamera().update();
-		}
 	}
 
 	private void updateLocationStuff() {
@@ -414,9 +267,7 @@ public class EntityActor extends Group {
 		if (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT)) {
 			final int round = 15;
 			final int rounded = round * Math.round(currRot / round);
-			System.out.println(currRot + ",m " + rounded);
 			final float newVal = rounded + (amount < 0 ? round : -round);
-			System.out.println("==> " + newVal);
 			mPhysical.rotation.degrees.set(Math.round(newVal));
 		} else {
 			mPhysical.rotation.degrees.set(currRot - 2 * amount);

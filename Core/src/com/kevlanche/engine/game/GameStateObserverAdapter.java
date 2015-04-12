@@ -23,4 +23,9 @@ public class GameStateObserverAdapter implements GameStateObserver {
 	public void onGenericChange() {
 
 	}
+
+	@Override
+	public void onRunningChanged() {
+
+	}
 }

@@ -9,5 +9,6 @@ public interface GameStateObserver {
 	void onFocusChanged(Entity newFocus);
 	
 	void onGenericChange();
-
+	
+	void onRunningChanged();
 }
