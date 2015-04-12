@@ -23,7 +23,7 @@ public interface Entity extends SaveStateable {
 
 	List<State> getStates();
 
-	void addActor(Entity actor);
+	void addChild(Entity actor);
 
 	List<Entity> getChildren();
 
@@ -36,4 +36,6 @@ public interface Entity extends SaveStateable {
 	void removeListener(EntityListener listener);
 
 	String getClassName();
+
+	void removeChild(Entity entity);
 }

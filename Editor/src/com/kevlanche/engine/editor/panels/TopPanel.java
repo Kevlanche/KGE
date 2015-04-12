@@ -13,11 +13,11 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import com.badlogic.gdx.Gdx;
-import com.kevlanche.engine.game.EntityLoader;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.Level;
 import com.kevlanche.engine.game.actor.EntityDefinition;
 import com.kevlanche.engine.game.assets.AssetProvider;
+import com.kevlanche.kge.runtime.EntityLoaderImpl;
 
 @SuppressWarnings("serial")
 public class TopPanel extends BasePanel {

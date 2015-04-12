@@ -37,4 +37,15 @@ public class StringValue extends AbstractValue {
 	public String asString() throws TypeException {
 		return mValue;
 	}
+
+	@Override
+	public boolean asBool() throws TypeException {
+		if ("true".equalsIgnoreCase(mValue)) {
+			return true;
+		} else if ("false".equalsIgnoreCase(mValue)) {
+			return false;
+		} else {
+			throw new TypeException(mValue + " is not a boolean");
+		}
+	}
 }

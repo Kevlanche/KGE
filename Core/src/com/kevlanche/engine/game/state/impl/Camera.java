@@ -8,13 +8,13 @@ public class Camera extends JavaState {
 
 	public static final String NAME = "camera";
 
-	public final FloatVariable x, y, width, height, zoom;
+	public final FloatVariable x, y, width, height, zoom, up;
 
 	public Camera() {
-		this(new X(), new Y(), new Width(), new Height(), new Zoom());
+		this(new X(), new Y(), new Width(), new Height(), new Zoom(), new Up());
 	}
 
-	public Camera(X x, Y y, Width width, Height height, Zoom zoom) {
+	public Camera(X x, Y y, Width width, Height height, Zoom zoom, Up up) {
 		super(NAME);
 
 		this.x = register(x);
@@ -22,6 +22,7 @@ public class Camera extends JavaState {
 		this.width = register(width);
 		this.height = register(height);
 		this.zoom = register(zoom);
+		this.up = register(up);
 	}
 
 	@Override
@@ -52,6 +53,13 @@ public class Camera extends JavaState {
 		@Override
 		public void set(float value) throws TypeException {
 			super.set(Math.max(.1f, Math.min(2f, value)));
+		}
+	}
+
+	public static class Up extends FloatVariable {
+
+		public Up() {
+			super("up", 90f);
 		}
 	}
 

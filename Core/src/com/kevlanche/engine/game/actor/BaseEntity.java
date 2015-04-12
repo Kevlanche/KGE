@@ -28,12 +28,7 @@ public class BaseEntity implements Entity {
 
 		@Override
 		public void onScriptSourceReloaded() {
-			try {
-				compiled = script.compile(BaseEntity.this);
-			} catch (CompileException e) {
-				e.printStackTrace();
-				System.err.println("Unable to recompile " + script);
-			}
+			compiled = null;
 		}
 	}
 
@@ -162,8 +157,7 @@ public class BaseEntity implements Entity {
 
 	@Override
 	public void addUserState(UserStateDefinition state) {
-		mCurrentState.states.add(state.createInstance());
-		notifyChange();
+		addPermanentState(state.createInstance());
 	}
 
 	@Override
@@ -189,8 +183,14 @@ public class BaseEntity implements Entity {
 	}
 
 	@Override
-	public void addActor(Entity actor) {
+	public void addChild(Entity actor) {
 		mChildren.add(actor);
+		notifyChange();
+	}
+	
+	@Override
+	public void removeChild(Entity entity) {
+		mChildren.remove(entity);
 		notifyChange();
 	}
 

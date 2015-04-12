@@ -45,11 +45,9 @@ import com.kevlanche.engine.game.state.JavaState;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.impl.Camera;
 import com.kevlanche.engine.game.state.impl.Physics;
-import com.kevlanche.engine.game.state.impl.Position;
 import com.kevlanche.engine.game.state.impl.Rendering;
 import com.kevlanche.engine.game.state.impl.Rendering.DrawableSrc;
-import com.kevlanche.engine.game.state.impl.Rotation;
-import com.kevlanche.engine.game.state.impl.Size;
+import com.kevlanche.engine.game.state.impl.Transform;
 import com.kevlanche.engine.game.state.value.BoolValue;
 import com.kevlanche.engine.game.state.value.FloatValue;
 import com.kevlanche.engine.game.state.value.IntValue;
@@ -75,14 +73,16 @@ public class GdxAssetProvider implements AssetProvider {
 	final List<EntityDefinition> mClassDefinitions;
 
 	final List<Level> mLevels;
+	private final EntityLoader mLoader;
 
-	public GdxAssetProvider(File rootDirectory) {
+	public GdxAssetProvider(File rootDirectory, EntityLoader loader) {
 		mRootDirectory = rootDirectory;
 		mLoadedRegions = new HashMap<>();
 		mScripts = new ArrayList<>();
 		mStateDefinitions = new ArrayList<>();
 		mClassDefinitions = new ArrayList<>();
 		mLevels = new ArrayList<>();
+		mLoader = loader;
 	}
 
 	@Override
@@ -123,9 +123,9 @@ public class GdxAssetProvider implements AssetProvider {
 		writer.object("vars");
 		{
 			for (State state : entity.getStates()) {
-				
+
 				boolean started = false;
-				
+
 				for (Variable var : state.getVariables()) {
 					if (!var.hasDefaultValue()) {
 						if (!started) {
@@ -173,18 +173,6 @@ public class GdxAssetProvider implements AssetProvider {
 
 			@Override
 			public String getName() {
-				return Position.NAME;
-			}
-
-			@Override
-			public State createInstance() {
-				return new Position();
-			}
-		});
-		mStateDefinitions.add(new StateDefinition() {
-
-			@Override
-			public String getName() {
 				return Rendering.NAME;
 			}
 
@@ -198,36 +186,24 @@ public class GdxAssetProvider implements AssetProvider {
 
 			@Override
 			public String getName() {
-				return Rotation.NAME;
-			}
-
-			@Override
-			public State createInstance() {
-				return new Rotation();
-			}
-		});
-		mStateDefinitions.add(new StateDefinition() {
-
-			@Override
-			public String getName() {
-				return Size.NAME;
-			}
-
-			@Override
-			public State createInstance() {
-				return new Size();
-			}
-		});
-		mStateDefinitions.add(new StateDefinition() {
-
-			@Override
-			public String getName() {
 				return Camera.NAME;
 			}
 
 			@Override
 			public State createInstance() {
 				return new Camera();
+			}
+		});
+		mStateDefinitions.add(new StateDefinition() {
+
+			@Override
+			public String getName() {
+				return Transform.NAME;
+			}
+
+			@Override
+			public State createInstance() {
+				return new Transform();
 			}
 		});
 
@@ -276,8 +252,7 @@ public class GdxAssetProvider implements AssetProvider {
 
 			@Override
 			public List<String> getRequiredStates() {
-				return Arrays.asList(Position.NAME, Size.NAME, Rotation.NAME,
-						Rendering.NAME);
+				return Arrays.asList(Transform.NAME, Rendering.NAME);
 			}
 
 			@Override
@@ -672,7 +647,7 @@ public class GdxAssetProvider implements AssetProvider {
 						+ "\"");
 			}
 			try {
-				Entity loaded = new EntityLoader().load(parent, def,
+				Entity loaded = mLoader.load(parent, def,
 						game.getAssetProvider());
 
 				final JsonValue vars = entity.get("vars");

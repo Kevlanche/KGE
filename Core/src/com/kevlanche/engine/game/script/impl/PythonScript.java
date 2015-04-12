@@ -343,6 +343,11 @@ public class PythonScript extends BaseScript {
 				});
 			}
 
+			public PyObject createPhysicsBody(PyDictionary attrs) {
+				
+				return null;
+			}
+			
 			public void interpolate(PyDictionary attrs) {
 				final Object startVal = attrs.get("start");
 				final Object endVal = attrs.get("end");

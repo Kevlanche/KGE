@@ -26,7 +26,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
 import com.badlogic.gdx.Gdx;
-import com.kevlanche.engine.game.EntityLoader;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
 import com.kevlanche.engine.game.actor.BaseEntity;
@@ -40,6 +39,7 @@ import com.kevlanche.engine.game.script.Script;
 import com.kevlanche.engine.game.script.ScriptDefinition;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.impl.Rendering;
+import com.kevlanche.kge.runtime.EntityLoaderImpl;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends BasePanel {
@@ -136,8 +136,9 @@ public class LeftPanel extends BasePanel {
 							public void run() {
 								try {
 									final EntityDefinition clazz = opts[sel];
-									final Entity loaded = new EntityLoader()
-											.load(mParent, clazz,
+									final Entity loaded = mState
+											.getEntityLoader().load(mParent,
+													clazz,
 													mState.getAssetProvider());
 									addRecursive(loaded);
 								} catch (Exception e) {

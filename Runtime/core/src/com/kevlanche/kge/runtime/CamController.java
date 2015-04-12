@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.kevlanche.engine.game.GameState;
@@ -46,8 +47,9 @@ public class CamController {
 			for (TrackedCamera tc : mCameras) {
 				update(tc);
 			}
+		} else {
+			update(mDefaultCamera);
 		}
-		update(mDefaultCamera);
 	}
 
 	private void update(TrackedCamera tc) {
@@ -58,7 +60,8 @@ public class CamController {
 
 			final Graphics graphics = Kge.getInstance().graphics;
 			final Viewport viewport = mStage.getViewport();
-			viewport.setScreenSize(graphics.width, graphics.height);
+			viewport.setScreenSize(graphics.width.asInt(),
+					graphics.height.asInt());
 
 			final float camw = tc.mCamera.width.asFloat();
 			final float camh = tc.mCamera.height.asFloat();
@@ -68,6 +71,10 @@ public class CamController {
 
 			og.position.set(tc.mCamera.x.asFloat() + camw / 2,
 					tc.mCamera.y.asFloat() + camh / 2, 0f);
+
+			Vector2 up = new Vector2(1f, 0f);
+			up.rotate(tc.mCamera.up.asFloat());
+			og.up.set(up.x, up.y, 0f);
 			og.update();
 		}
 	}

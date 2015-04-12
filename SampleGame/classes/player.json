@@ -1,14 +1,16 @@
 {
 	"extends" : "base",
 	"states" : {
-		"game" :  {
-			"x" : 5 // Override default value
+		"physics" :  {
+			"dynamic" : true
 		},
+		"camera" : {},
 		"rendering" : {
 			"image" : "block_background_clone"
 		}
 	},
 	"scripts" :  [
-		"controller.py"
+		"controller.py",
+		"playerCamera.py"
 	]
 }

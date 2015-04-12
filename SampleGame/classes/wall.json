@@ -1,0 +1,14 @@
+{
+	"extends" : "base",
+	"states" : {
+		"physics" :  {
+			"dynamic" : false
+		},
+		"rendering" : {
+			"image" : "block_background"
+		}
+	},
+	"scripts" :  [
+		
+	]
+}

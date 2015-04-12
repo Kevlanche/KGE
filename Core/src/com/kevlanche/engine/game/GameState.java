@@ -15,14 +15,16 @@ import com.kevlanche.engine.game.state.State;
 
 public class GameState {
 
-	private AssetProvider mAssetProvider;
+	private final AssetProvider mAssetProvider;
+	private final EntityLoader mEntityLoader;
 	private boolean mIsRunning = false;
 	private List<Entity> mAllActors = new CopyOnWriteArrayList<>();
 	private List<GameStateObserver> mObservers = new CopyOnWriteArrayList<>();
 	private Entity mCurrentSelection = null;
 
-	public GameState(AssetProvider provider) {
+	public GameState(AssetProvider provider, EntityLoader loader) {
 		mAssetProvider = provider;
+		mEntityLoader = loader;
 	}
 
 	public void tick(float dt) {
@@ -51,6 +53,10 @@ public class GameState {
 		return mAssetProvider;
 	}
 
+	public EntityLoader getEntityLoader() {
+		return mEntityLoader;
+	}
+
 	public boolean isRunning() {
 		return mIsRunning;
 	}
@@ -64,7 +70,13 @@ public class GameState {
 			return;
 		}
 		mIsRunning = run;
-
+		
+		final Kge kge = Kge.getInstance();
+		if (mIsRunning) {
+			kge.physics.saveState();
+		} else {
+			kge.physics.restoreState();
+		}
 		for (Entity a : mAllActors) {
 			if (mIsRunning) {
 				a.saveState();
@@ -129,6 +141,9 @@ public class GameState {
 			mCurrentSelection = null;
 		}
 		mAllActors.remove(entity);
+		if (entity.getParent() != null) {
+			entity.getParent().removeChild(entity);
+		}
 		entity.dispose();
 		for (GameStateObserver gso : mObservers) {
 			gso.onEntityRemoved(entity);

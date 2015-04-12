@@ -22,6 +22,8 @@ import com.kevlanche.engine.game.Kge;
 import com.kevlanche.engine.game.Kge.Graphics;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.state.impl.Camera;
+import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.TypeException;
 
 public class KgeRuntime extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -30,7 +32,7 @@ public class KgeRuntime extends ApplicationAdapter {
 
 	private Stage mStage;
 
-	public static World mWorld;
+	private final World mWorld;
 	Box2DDebugRenderer b2d;
 	float updBuf;
 
@@ -38,8 +40,36 @@ public class KgeRuntime extends ApplicationAdapter {
 	private CamController mCamController;
 
 	public KgeRuntime() {
-		mState = new GameState(new GdxAssetProvider(new File(
-				"C:\\Users\\Anton\\KGE\\SampleGame")));
+		final Kge kge = Kge.getInstance();
+		kge.physics = new Kge.Physics(new FloatVariable("gravityX", 0f) {
+			@Override
+			public void set(float value) throws TypeException {
+				mWorld.setGravity(new Vector2(value, kge.physics.gravityY
+						.asFloat()));
+			}
+
+			@Override
+			public float asFloat() throws TypeException {
+				return mWorld.getGravity().x;
+			}
+		}, new FloatVariable("gravityY", 0f) {
+			@Override
+			public void set(float value) throws TypeException {
+				mWorld.setGravity(new Vector2(kge.physics.gravityX.asFloat(),
+						value));
+			}
+
+			@Override
+			public float asFloat() throws TypeException {
+				return mWorld.getGravity().y;
+			}
+		});
+
+		mWorld = new World(new Vector2(0f, -9.82f), false);
+		final EntityLoaderImpl loader = new EntityLoaderImpl(mWorld);
+		final GdxAssetProvider provider = new GdxAssetProvider(new File(
+				"C:\\Users\\Anton\\KGE\\SampleGame"), loader);
+		mState = new GameState(provider, loader);
 	}
 
 	@Override
@@ -102,11 +132,19 @@ public class KgeRuntime extends ApplicationAdapter {
 
 					@Override
 					public void run() {
+						removeFrom(actorGroup);
+					}
+
+					private void removeFrom(final Group actorGroup) {
 						for (Actor actor : actorGroup.getChildren()) {
-							if (actor instanceof EntityActor
-									&& ((EntityActor) actor).getWrappedEntity() == entity) {
-								actor.remove();
-								return;
+							if (actor instanceof EntityActor) {
+								final EntityActor ea = (EntityActor) actor;
+								if (ea.getWrappedEntity() == entity) {
+									actor.remove();
+									return;
+								} else {
+									removeFrom(ea);
+								}
 							}
 						}
 					}
@@ -168,7 +206,6 @@ public class KgeRuntime extends ApplicationAdapter {
 
 		Gdx.input.setInputProcessor(input);
 
-		mWorld = new World(new Vector2(0f, -9.82f), false);
 		b2d = new Box2DDebugRenderer();
 	}
 
@@ -205,8 +242,8 @@ public class KgeRuntime extends ApplicationAdapter {
 	@Override
 	public void resize(int width, int height) {
 		final Graphics kgeGraphics = Kge.getInstance().graphics;
-		kgeGraphics.width = width;
-		kgeGraphics.height = height;
+		kgeGraphics.width.set(width);
+		kgeGraphics.height.set(height);
 
 		mDefaultCamera.width.set(width / PTM_RATIO);
 		mDefaultCamera.height.set(height / PTM_RATIO);

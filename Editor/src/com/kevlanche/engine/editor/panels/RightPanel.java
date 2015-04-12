@@ -115,8 +115,8 @@ public class RightPanel extends BasePanel implements EntityListener {
 				if (focus == null) {
 					return;
 				}
-				final Script[] opts = availScripts
-						.toArray(new Script[availScripts.size()]);
+				final ScriptDefinition[] opts = availScripts
+						.toArray(new ScriptDefinition[availScripts.size()]);
 
 				final int sel = JOptionPane.showOptionDialog(RightPanel.this,
 						"What script should be added?", "Add script",
@@ -124,7 +124,7 @@ public class RightPanel extends BasePanel implements EntityListener {
 						JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
 
 				if (sel >= 0 && sel < opts.length) {
-					focus.addScript(opts[sel]);
+					focus.addScript(opts[sel].createInstance());
 					mState.triggerOnChanged();
 				}
 			}
@@ -363,7 +363,12 @@ public class RightPanel extends BasePanel implements EntityListener {
 							continue;
 						}
 
-						final String newVal = var.asString();
+						final String newVal;
+						if (var.getType() == ValueType.FLOAT) {
+							newVal = String.format("%.2f", var.asFloat());
+						} else {
+							newVal = var.asString();
+						}
 						final JTextField jtf = (JTextField) comp;
 						if (!newVal.equals(jtf.getText())) {
 							jtf.setText(newVal);

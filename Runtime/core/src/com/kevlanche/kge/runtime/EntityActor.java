@@ -19,10 +19,8 @@ import com.kevlanche.engine.game.actor.EntityListener;
 import com.kevlanche.engine.game.assets.Drawable;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.impl.Physics;
-import com.kevlanche.engine.game.state.impl.Position;
 import com.kevlanche.engine.game.state.impl.Rendering;
-import com.kevlanche.engine.game.state.impl.Rotation;
-import com.kevlanche.engine.game.state.impl.Size;
+import com.kevlanche.engine.game.state.impl.Transform;
 import com.kevlanche.engine.game.state.value.variable.FloatVariable;
 import com.kevlanche.kge.runtime.GdxAssetProvider.GdxDrawable;
 
@@ -30,27 +28,19 @@ public class EntityActor extends Group {
 
 	private static class PhysicalEntity {
 		public Entity actor;
-		public Position position;
-		public Rotation rotation;
+		public Transform transform;
 		public Physics physics;
 		public Rendering render;
-		public Size size;
 	}
 
 	private static PhysicalEntity wrapEntity(Entity ent) {
-		Position pos = null;
-		Size size = null;
-		Rotation rotation = null;
+		Transform transform = null;
 		Physics physics = null;
 		Rendering texture = null;
 
 		for (State state : ent.getStates()) {
-			if (state instanceof Position) {
-				pos = (Position) state;
-			} else if (state instanceof Size) {
-				size = (Size) state;
-			} else if (state instanceof Rotation) {
-				rotation = (Rotation) state;
+			if (state instanceof Transform) {
+				transform = (Transform) state;
 			} else if (state instanceof Physics) {
 				physics = (Physics) state;
 			} else if (state instanceof Rendering) {
@@ -58,15 +48,13 @@ public class EntityActor extends Group {
 			}
 		}
 
-		if (pos == null) {
-			System.err.println("Unable to extract pos from " + ent);
+		if (transform == null) {
+			System.err.println("Unable to extract transform from " + ent);
 			return null;
 		}
 		final PhysicalEntity ret = new PhysicalEntity();
 		ret.actor = ent;
-		ret.position = pos;
-		ret.size = size;
-		ret.rotation = rotation;
+		ret.transform = transform;
 		ret.physics = physics;
 		ret.render = texture;
 
@@ -118,13 +106,13 @@ public class EntityActor extends Group {
 				mIsBeingPressed = true;
 
 				if (button == Buttons.RIGHT) {
-					xattr = mPhysical.size.width;
-					yattr = mPhysical.size.height;
+					xattr = mPhysical.transform.width;
+					yattr = mPhysical.transform.height;
 
 					transformSrc = null;
 				} else {
-					xattr = mPhysical.position.x;
-					yattr = mPhysical.position.y;
+					xattr = mPhysical.transform.x;
+					yattr = mPhysical.transform.y;
 					transformSrc = EntityActor.this;
 				}
 				target.set(xattr.asFloat(), yattr.asFloat());
@@ -212,9 +200,8 @@ public class EntityActor extends Group {
 
 	@Override
 	protected void drawDebugBounds(ShapeRenderer shapes) {
-		if (!getDebug()
-				|| mPhysical == null
-				|| (mState.getCurrentSelection() != mPhysical.actor && mPhysical.size != null)) {
+		if (!getDebug() || mPhysical == null
+				|| (mState.getCurrentSelection() != mPhysical.actor)) {
 			return;
 		}
 		shapes.set(ShapeType.Line);
@@ -233,24 +220,20 @@ public class EntityActor extends Group {
 
 	private void updateLocationStuff() {
 		if (mPhysical != null) {
-			setPosition(mPhysical.position.x.asFloat(),
-					mPhysical.position.y.asFloat());
+			setPosition(mPhysical.transform.x.asFloat(),
+					mPhysical.transform.y.asFloat());
 
-			if (mPhysical.size != null) {
-				setSize(mPhysical.size.width.asFloat(),
-						mPhysical.size.height.asFloat());
-			} else {
-				setSize(.5f, .5f);
-			}
+			setSize(mPhysical.transform.width.asFloat(),
+					mPhysical.transform.height.asFloat());
 
-			if (mPhysical.rotation != null) {
-				setRotation(mPhysical.rotation.degrees.asFloat());
-				setOrigin(mPhysical.rotation.anchorX.asFloat(),
-						mPhysical.rotation.anchorY.asFloat());
-			} else {
-				setRotation(0f);
-				setOrigin(0f, 0f);
-			}
+			setRotation(mPhysical.transform.rotation.asFloat());
+			setOrigin(mPhysical.transform.anchorX.asFloat(),
+					mPhysical.transform.anchorY.asFloat());
+		} else {
+			setPosition(0f, 0f);
+			setSize(.5f, .5f);
+			setRotation(0f);
+			setOrigin(0f, 0f);
 		}
 	}
 
@@ -263,14 +246,14 @@ public class EntityActor extends Group {
 			}
 			return;
 		}
-		final float currRot = mPhysical.rotation.degrees.asFloat();
+		final float currRot = mPhysical.transform.rotation.asFloat();
 		if (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT)) {
 			final int round = 15;
 			final int rounded = round * Math.round(currRot / round);
 			final float newVal = rounded + (amount < 0 ? round : -round);
-			mPhysical.rotation.degrees.set(Math.round(newVal));
+			mPhysical.transform.rotation.set(Math.round(newVal));
 		} else {
-			mPhysical.rotation.degrees.set(currRot - 2 * amount);
+			mPhysical.transform.rotation.set(currRot - 2 * amount);
 		}
 	}
 }
