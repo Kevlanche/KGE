@@ -1,19 +1,19 @@
 package com.kevlanche.engine.game.state.impl;
 
 import com.kevlanche.engine.game.state.JavaState;
-import com.kevlanche.engine.game.state.value.variable.BoolVariable;
-import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedBoolVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
 
 public class Physics extends JavaState {
 
 	public static final String NAME = "physics";
 
-	public final BoolVariable fixedRotation, dynamic;
+	public final NamedBoolVariable fixedRotation, dynamic;
 	public final VelocityX velocityX;
 	public final VelocityY velocityY;
 
-	private FloatVariable mInterceptedX, mInterceptedY;
+	private NamedFloatVariable mInterceptedX, mInterceptedY;
 
 	public Physics() {
 		this(new FixedRotation(), new Dynamic(), new VelocityX(),
@@ -32,7 +32,7 @@ public class Physics extends JavaState {
 
 	// TODO intercepting variables like this can be very useful (albeit hard to
 	// follow). Consider doing it a standard api in the Variable interface
-	public void intercept(FloatVariable velX, FloatVariable velY) {
+	public void intercept(NamedFloatVariable velX, NamedFloatVariable velY) {
 		velocityX.setIntercepter(velX);
 		velocityY.setIntercepter(velY);
 	}
@@ -56,15 +56,15 @@ public class Physics extends JavaState {
 		}
 	}
 
-	public static class InterceptableFloatVariable extends FloatVariable {
+	public static class InterceptableFloatVariable extends NamedFloatVariable {
 
-		private FloatVariable mIntercepter;
+		private NamedFloatVariable mIntercepter;
 
 		public InterceptableFloatVariable(String name, float defaultValue) {
 			super(name, defaultValue);
 		}
 
-		void setIntercepter(FloatVariable var) {
+		void setIntercepter(NamedFloatVariable var) {
 			mIntercepter = var;
 			onChanged();
 		}
@@ -88,7 +88,7 @@ public class Physics extends JavaState {
 		}
 	}
 
-	public static class FixedRotation extends BoolVariable {
+	public static class FixedRotation extends NamedBoolVariable {
 
 		public static final boolean DEFAULT_VALUE = false;
 
@@ -97,7 +97,7 @@ public class Physics extends JavaState {
 		}
 	}
 
-	public static class Dynamic extends BoolVariable {
+	public static class Dynamic extends NamedBoolVariable {
 
 		public static final boolean DEFAULT_VALUE = false;
 

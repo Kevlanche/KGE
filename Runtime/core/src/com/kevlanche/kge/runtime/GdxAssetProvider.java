@@ -48,14 +48,16 @@ import com.kevlanche.engine.game.state.impl.Physics;
 import com.kevlanche.engine.game.state.impl.Rendering;
 import com.kevlanche.engine.game.state.impl.Rendering.DrawableSrc;
 import com.kevlanche.engine.game.state.impl.Transform;
-import com.kevlanche.engine.game.state.value.BoolValue;
-import com.kevlanche.engine.game.state.value.FloatValue;
-import com.kevlanche.engine.game.state.value.IntValue;
-import com.kevlanche.engine.game.state.value.StringValue;
 import com.kevlanche.engine.game.state.value.Value;
+import com.kevlanche.engine.game.state.value.variable.ArrayVariable;
+import com.kevlanche.engine.game.state.value.variable.BoolVariable;
 import com.kevlanche.engine.game.state.value.variable.FloatVariable;
 import com.kevlanche.engine.game.state.value.variable.IntVariable;
-import com.kevlanche.engine.game.state.value.variable.ObservableVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedArrayVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedIntVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedStringVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedVariable;
 import com.kevlanche.engine.game.state.value.variable.StringVariable;
 import com.kevlanche.engine.game.state.value.variable.Variable;
 
@@ -126,7 +128,7 @@ public class GdxAssetProvider implements AssetProvider {
 
 				boolean started = false;
 
-				for (Variable var : state.getVariables()) {
+				for (NamedVariable var : state.getVariables()) {
 					if (!var.hasDefaultValue()) {
 						if (!started) {
 							started = true;
@@ -360,13 +362,15 @@ public class GdxAssetProvider implements AssetProvider {
 				if (fileName.endsWith(".json")) {
 
 					final JsonValue val = reader.parse(new FileHandle(file));
-					final List<ObservableVariable> vars = parseUserState(val);
+					final List<NamedVariable> vars = parseUserState(val);
 
 					if (vars.isEmpty()) {
 						System.err.println("No variables in " + file + "?");
 					} else {
 						final String stateName = fileName.substring(0,
 								fileName.indexOf('.'));
+						final boolean canBeShared = val.getBoolean("__shared",
+								false);
 
 						mStateDefinitions.add(new UserStateDefinition() {
 
@@ -383,7 +387,13 @@ public class GdxAssetProvider implements AssetProvider {
 							@Override
 							public Instance createInstance() {
 								return new UserStateInstance(stateName,
-										parseUserState(val));
+										parseUserState(val)) {
+
+									@Override
+									public boolean canBeShared() {
+										return canBeShared;
+									}
+								};
 							}
 						});
 
@@ -486,7 +496,7 @@ public class GdxAssetProvider implements AssetProvider {
 
 				for (JsonValue var : req.iterator()) {
 
-					final Value value = toValue(var);
+					final Value value = toVariable(var);
 					if (value == null) {
 						continue;
 					}
@@ -516,7 +526,8 @@ public class GdxAssetProvider implements AssetProvider {
 							for (Entry<String, Value> defVal : vs.defaultValues
 									.entrySet()) {
 								final String attrName = defVal.getKey();
-								for (Variable stateVar : state.getVariables()) {
+								for (NamedVariable stateVar : state
+										.getVariables()) {
 									if (stateVar.getName().equals(attrName)) {
 										stateVar.copy(defVal.getValue());
 										break;
@@ -565,33 +576,45 @@ public class GdxAssetProvider implements AssetProvider {
 		};
 	}
 
-	private Value toValue(JsonValue var) {
+	private Variable toVariable(JsonValue var) {
 		if (var.isLong()) {
-			return new IntValue(var.asInt());
+			return new IntVariable(var.asInt());
 		} else if (var.isDouble()) {
-			return new FloatValue(var.asFloat());
+			return new FloatVariable(var.asFloat());
 		} else if (var.isString()) {
-			return new StringValue(var.asString());
+			return new StringVariable(var.asString());
 		} else if (var.isBoolean()) {
-			return new BoolValue(var.asBoolean());
+			return new BoolVariable(var.asBoolean());
+		} else if (var.isArray()) {
+			Variable[] arr = new Variable[var.size];
+			for (int i = 0; i < arr.length; i++) {
+				arr[i] = toVariable(var.get(i));
+			}
+			return new ArrayVariable(arr);
 		} else {
 			System.out.println("Unknown var type " + var);
 			return null;
 		}
 	}
 
-	private List<ObservableVariable> parseUserState(JsonValue val) {
-		final List<ObservableVariable> vars = new ArrayList<>();
+	private List<NamedVariable> parseUserState(JsonValue val) {
+		final List<NamedVariable> vars = new ArrayList<>();
 
-		System.out.println(val);
 		for (JsonValue var : val.iterator()) {
 
 			if (var.isLong()) {
-				vars.add(new IntVariable(var.name, var.asInt()));
+				vars.add(new NamedIntVariable(var.name, var.asInt()));
 			} else if (var.isDouble()) {
-				vars.add(new FloatVariable(var.name, var.asFloat()));
+				vars.add(new NamedFloatVariable(var.name, var.asFloat()));
 			} else if (var.isString()) {
-				vars.add(new StringVariable(var.name, var.asString()));
+				vars.add(new NamedStringVariable(var.name, var.asString()));
+			} else if (var.isArray()) {
+				final Value arrVal = toVariable(var);
+				if (!(arrVal instanceof ArrayVariable)) {
+					System.err.println("Unable to parse array from " + var);
+				} else {
+					vars.add(new NamedArrayVariable(var.name, arrVal.asArray()));
+				}
 			} else {
 				System.out.println("Unknown var type " + var);
 			}
@@ -658,12 +681,13 @@ public class GdxAssetProvider implements AssetProvider {
 						for (State entityState : loaded.getStates()) {
 							if (entityState.getName().equals(state.name)) {
 
-								for (Variable var : entityState.getVariables()) {
+								for (NamedVariable var : entityState
+										.getVariables()) {
 
 									final JsonValue defValue = state.get(var
 											.getName());
 									if (defValue != null) {
-										final Value value = toValue(defValue);
+										final Value value = toVariable(defValue);
 										if (value != null) {
 											var.copy(value);
 										}
@@ -767,9 +791,9 @@ public class GdxAssetProvider implements AssetProvider {
 	private class UserStateInstance extends JavaState implements
 			UserStateDefinition.Instance {
 
-		UserStateInstance(String name, List<ObservableVariable> vars) {
+		UserStateInstance(String name, List<NamedVariable> vars) {
 			super(name);
-			for (ObservableVariable var : vars) {
+			for (NamedVariable var : vars) {
 				register(var);
 			}
 		}

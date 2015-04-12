@@ -4,7 +4,7 @@ import com.kevlanche.engine.game.assets.AssetProvider;
 import com.kevlanche.engine.game.assets.Drawable;
 import com.kevlanche.engine.game.state.value.ValueType;
 
-public class DrawableVariable extends AbstractVariable {
+public class DrawableVariable extends AbstractNamedVariable {
 
 	private Drawable mDrawable;
 	private final AssetProvider mProvider;
@@ -47,5 +47,4 @@ public class DrawableVariable extends AbstractVariable {
 	public ValueType getType() {
 		return ValueType.DRAWABLE;
 	}
-
 }

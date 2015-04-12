@@ -1,13 +1,14 @@
 package com.kevlanche.engine.game.state.value.variable;
 
 import com.kevlanche.engine.game.state.value.ValueType;
+import com.kevlanche.engine.game.state.value.variable.nameless.AbstractVariable;
 
 public class BoolVariable extends AbstractVariable {
 
 	private boolean mValue;
 
-	public BoolVariable(String name, boolean defaultValue) {
-		super(name, defaultValue);
+	public BoolVariable(boolean defaultValue) {
+		super(defaultValue);
 		mValue = defaultValue;
 	}
 

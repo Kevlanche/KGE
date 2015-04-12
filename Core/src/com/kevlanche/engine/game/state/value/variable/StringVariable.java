@@ -1,13 +1,14 @@
 package com.kevlanche.engine.game.state.value.variable;
 
 import com.kevlanche.engine.game.state.value.ValueType;
+import com.kevlanche.engine.game.state.value.variable.nameless.AbstractVariable;
 
 public class StringVariable extends AbstractVariable {
 
 	private String mValue;
 
-	public StringVariable(String name, String defaultValue) {
-		super(name, defaultValue);
+	public StringVariable(String defaultValue) {
+		super(defaultValue);
 		mValue = defaultValue;
 	}
 

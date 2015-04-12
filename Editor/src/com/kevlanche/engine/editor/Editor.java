@@ -2,32 +2,19 @@ package com.kevlanche.engine.editor;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 
 import com.kevlanche.engine.editor.panels.CenterPanel;
 import com.kevlanche.engine.editor.panels.LeftPanel;
 import com.kevlanche.engine.editor.panels.RightPanel;
 import com.kevlanche.engine.editor.panels.TopPanel;
 import com.kevlanche.engine.game.GameState;
-import com.kevlanche.engine.game.script.Script;
-import com.kevlanche.engine.game.script.ScriptProvider;
-import com.kevlanche.engine.game.script.impl.PythonScript;
-import com.kevlanche.kge.runtime.GdxAssetProvider;
 import com.kevlanche.kge.runtime.KgeRuntime;
 
 public class Editor {

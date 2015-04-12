@@ -69,8 +69,8 @@ public class CamController {
 
 			viewport.apply(false);
 
-			og.position.set(tc.mCamera.x.asFloat() + camw / 2,
-					tc.mCamera.y.asFloat() + camh / 2, 0f);
+			og.position.set(tc.mCamera.x.asFloat() + camw / 2f,
+					tc.mCamera.y.asFloat() + camh / 2f, 0f);
 
 			Vector2 up = new Vector2(1f, 0f);
 			up.rotate(tc.mCamera.up.asFloat());

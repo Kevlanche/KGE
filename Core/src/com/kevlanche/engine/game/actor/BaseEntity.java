@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.assets.UserStateDefinition;
 import com.kevlanche.engine.game.script.CompileException;
 import com.kevlanche.engine.game.script.CompiledScript;
@@ -102,11 +103,11 @@ public class BaseEntity implements Entity {
 	}
 
 	@Override
-	public void tick() throws CompileException {
+	public void tick(GameState game) throws CompileException {
 		boolean didCompile = false;
 		for (ScriptContainer container : mScripts) {
 			if (container.compiled == null) {
-				container.compiled = container.script.compile(this);
+				container.compiled = container.script.compile(game, this);
 				didCompile = false;
 			}
 		}

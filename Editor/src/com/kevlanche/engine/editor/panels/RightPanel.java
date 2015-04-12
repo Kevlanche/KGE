@@ -44,7 +44,7 @@ import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.StateUtil;
 import com.kevlanche.engine.game.state.StateUtil.OwnedState;
 import com.kevlanche.engine.game.state.value.ValueType;
-import com.kevlanche.engine.game.state.value.variable.Variable;
+import com.kevlanche.engine.game.state.value.variable.NamedVariable;
 
 @SuppressWarnings("serial")
 public class RightPanel extends BasePanel implements EntityListener {
@@ -248,10 +248,10 @@ public class RightPanel extends BasePanel implements EntityListener {
 				1.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 2, 5);
 
-		List<Variable> vars = state.getVariables();
+		List<NamedVariable> vars = state.getVariables();
 		List<Component> fields = new ArrayList<>();
 		AtomicBoolean ignoreUpdates = new AtomicBoolean(false);
-		for (final Variable var : vars) {
+		for (final NamedVariable var : vars) {
 			final Component editor;
 
 			if (var.getType() == ValueType.BOOL) {
@@ -356,7 +356,7 @@ public class RightPanel extends BasePanel implements EntityListener {
 			public void actionPerformed(ActionEvent e) {
 				ignoreUpdates.set(true);
 				for (int i = 0; i < fields.size(); i++) {
-					final Variable var = vars.get(i);
+					final NamedVariable var = vars.get(i);
 					final Component comp = fields.get(i);
 					if (comp instanceof JTextField) {
 						if (comp.hasFocus()) {

@@ -1,14 +1,14 @@
 package com.kevlanche.engine.game.state.impl;
 
 import com.kevlanche.engine.game.state.JavaState;
-import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
 
 public class Camera extends JavaState {
 
 	public static final String NAME = "camera";
 
-	public final FloatVariable x, y, width, height, zoom, up;
+	public final NamedFloatVariable x, y, width, height, zoom, up;
 
 	public Camera() {
 		this(new X(), new Y(), new Width(), new Height(), new Zoom(), new Up());
@@ -30,21 +30,21 @@ public class Camera extends JavaState {
 		return true;
 	}
 
-	public static class X extends FloatVariable {
+	public static class X extends NamedFloatVariable {
 
 		public X() {
 			super("x", 0);
 		}
 	}
 
-	public static class Y extends FloatVariable {
+	public static class Y extends NamedFloatVariable {
 
 		public Y() {
 			super("y", 0);
 		}
 	}
 
-	public static class Zoom extends FloatVariable {
+	public static class Zoom extends NamedFloatVariable {
 
 		public Zoom() {
 			super("zoom", 1f);
@@ -56,7 +56,7 @@ public class Camera extends JavaState {
 		}
 	}
 
-	public static class Up extends FloatVariable {
+	public static class Up extends NamedFloatVariable {
 
 		public Up() {
 			super("up", 90f);
@@ -78,7 +78,7 @@ public class Camera extends JavaState {
 
 	}
 
-	private static class ClampedSize extends FloatVariable {
+	private static class ClampedSize extends NamedFloatVariable {
 
 		public ClampedSize(String name, float defaultValue) {
 			super(name, defaultValue);

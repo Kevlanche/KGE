@@ -2,6 +2,7 @@ package com.kevlanche.engine.game.state.value;
 
 import com.kevlanche.engine.game.assets.Drawable;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
+import com.kevlanche.engine.game.state.value.variable.Variable;
 
 public interface Value {
 
@@ -14,6 +15,8 @@ public interface Value {
 	boolean asBool() throws TypeException;
 
 	Drawable asDrawable() throws TypeException;
+
+	Variable[] asArray() throws TypeException;
 
 	ValueType getType();
 }

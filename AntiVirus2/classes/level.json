@@ -1,0 +1,13 @@
+{
+	"extends" : "base",
+	"states" : {
+		"camera" :  {},
+		"game" : {},
+		"rendering" : {
+			"image" : "bg"
+		}
+	},
+	"scripts" :  [
+		"level.py"
+	]
+}

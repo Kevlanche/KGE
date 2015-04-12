@@ -5,5 +5,6 @@ public enum ValueType {
 	FLOAT,
 	STRING,
 	BOOL,
-	DRAWABLE
+	DRAWABLE,
+	ARRAY
 }

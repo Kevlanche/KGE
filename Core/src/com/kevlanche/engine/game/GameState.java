@@ -36,12 +36,19 @@ public class GameState {
 
 			for (Entity actor : mAllActors) {
 				try {
-					actor.tick();
+					actor.tick(this);
 				} catch (CompileException e1) {
-					mIsRunning = false;
+					setIsRunning(false);
 					e1.printStackTrace();
-					JOptionPane.showMessageDialog(null,
-							"Compile errorz! " + e1.toString());
+					
+					SwingUtilities.invokeLater(new Runnable() {
+
+						@Override
+						public void run() {
+							JOptionPane.showMessageDialog(null,
+									"Compile errorz! " + e1.toString());
+						}
+					});
 				}
 			}
 
@@ -70,7 +77,7 @@ public class GameState {
 			return;
 		}
 		mIsRunning = run;
-		
+
 		final Kge kge = Kge.getInstance();
 		if (mIsRunning) {
 			kge.physics.saveState();

@@ -2,6 +2,7 @@ package com.kevlanche.engine.game.state.value;
 
 import com.kevlanche.engine.game.assets.Drawable;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
+import com.kevlanche.engine.game.state.value.variable.Variable;
 
 public abstract class AbstractValue implements Value {
 
@@ -24,5 +25,9 @@ public abstract class AbstractValue implements Value {
 	public Drawable asDrawable() throws TypeException {
 		throw new TypeException();
 	}
-
+	
+	@Override
+	public Variable[] asArray() throws TypeException {
+		throw new TypeException();
+	}
 }

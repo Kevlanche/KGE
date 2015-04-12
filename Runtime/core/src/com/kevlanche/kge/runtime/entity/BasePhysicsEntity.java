@@ -8,12 +8,11 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.BaseEntity;
 import com.kevlanche.engine.game.actor.Entity;
-import com.kevlanche.engine.game.assets.UserStateDefinition;
 import com.kevlanche.engine.game.script.CompileException;
 import com.kevlanche.engine.game.state.State;
-import com.kevlanche.engine.game.state.impl.Camera.Up;
 import com.kevlanche.engine.game.state.impl.Physics;
 import com.kevlanche.engine.game.state.impl.Transform;
 import com.kevlanche.engine.game.state.impl.Transform.Height;
@@ -21,7 +20,7 @@ import com.kevlanche.engine.game.state.impl.Transform.Rotation;
 import com.kevlanche.engine.game.state.impl.Transform.Width;
 import com.kevlanche.engine.game.state.impl.Transform.X;
 import com.kevlanche.engine.game.state.impl.Transform.Y;
-import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
 import com.kevlanche.kge.runtime.Collision;
 
@@ -216,7 +215,7 @@ public class BasePhysicsEntity extends BaseEntity {
 		if (state instanceof Physics) {
 			mPhysics = (Physics) state;
 
-			final FloatVariable velx = new Physics.VelocityX() {
+			final NamedFloatVariable velx = new Physics.VelocityX() {
 
 				@Override
 				public float asFloat() throws TypeException {
@@ -228,7 +227,7 @@ public class BasePhysicsEntity extends BaseEntity {
 					mBody.setLinearVelocity(value, mPhysics.velocityY.asFloat());
 				}
 			};
-			final FloatVariable vely = new Physics.VelocityX() {
+			final NamedFloatVariable vely = new Physics.VelocityX() {
 
 				@Override
 				public float asFloat() throws TypeException {
@@ -259,8 +258,8 @@ public class BasePhysicsEntity extends BaseEntity {
 	long lastPhysicsChange;
 
 	@Override
-	public void tick() throws CompileException {
-		super.tick();
+	public void tick(GameState game) throws CompileException {
+		super.tick(game);
 
 		// if (mPhysics != null && mBody != null) {
 		// System.out.println(mWorld.getGravity());

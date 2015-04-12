@@ -22,7 +22,7 @@ import com.kevlanche.engine.game.Kge;
 import com.kevlanche.engine.game.Kge.Graphics;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.state.impl.Camera;
-import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
 
 public class KgeRuntime extends ApplicationAdapter {
@@ -41,7 +41,7 @@ public class KgeRuntime extends ApplicationAdapter {
 
 	public KgeRuntime() {
 		final Kge kge = Kge.getInstance();
-		kge.physics = new Kge.Physics(new FloatVariable("gravityX", 0f) {
+		kge.physics = new Kge.Physics(new NamedFloatVariable("gravityX", 0f) {
 			@Override
 			public void set(float value) throws TypeException {
 				mWorld.setGravity(new Vector2(value, kge.physics.gravityY
@@ -52,7 +52,7 @@ public class KgeRuntime extends ApplicationAdapter {
 			public float asFloat() throws TypeException {
 				return mWorld.getGravity().x;
 			}
-		}, new FloatVariable("gravityY", 0f) {
+		}, new NamedFloatVariable("gravityY", 0f) {
 			@Override
 			public void set(float value) throws TypeException {
 				mWorld.setGravity(new Vector2(kge.physics.gravityX.asFloat(),
@@ -68,7 +68,7 @@ public class KgeRuntime extends ApplicationAdapter {
 		mWorld = new World(new Vector2(0f, -9.82f), false);
 		final EntityLoaderImpl loader = new EntityLoaderImpl(mWorld);
 		final GdxAssetProvider provider = new GdxAssetProvider(new File(
-				"C:\\Users\\Anton\\KGE\\SampleGame"), loader);
+				"C:\\Users\\Anton\\KGE\\AntiVirus2"), loader);
 		mState = new GameState(provider, loader);
 	}
 

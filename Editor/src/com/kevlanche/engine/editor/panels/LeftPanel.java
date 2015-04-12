@@ -10,10 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -28,18 +25,12 @@ import javax.swing.border.BevelBorder;
 import com.badlogic.gdx.Gdx;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
-import com.kevlanche.engine.game.actor.BaseEntity;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.actor.EntityDefinition;
 import com.kevlanche.engine.game.assets.AssetProvider;
 import com.kevlanche.engine.game.assets.Drawable;
-import com.kevlanche.engine.game.assets.StateDefinition;
-import com.kevlanche.engine.game.assets.UserStateDefinition;
-import com.kevlanche.engine.game.script.Script;
-import com.kevlanche.engine.game.script.ScriptDefinition;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.impl.Rendering;
-import com.kevlanche.kge.runtime.EntityLoaderImpl;
 
 @SuppressWarnings("serial")
 public class LeftPanel extends BasePanel {

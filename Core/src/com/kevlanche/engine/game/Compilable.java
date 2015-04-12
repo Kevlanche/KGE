@@ -5,5 +5,5 @@ import com.kevlanche.engine.game.script.CompileException;
 
 
 public interface Compilable<Compiled> {
-	Compiled compile(Entity owner) throws CompileException;
+	Compiled compile(GameState game, Entity owner) throws CompileException;
 }

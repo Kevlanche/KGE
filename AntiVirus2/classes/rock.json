@@ -1,0 +1,16 @@
+{
+	"extends" : "base",
+	"states" : {
+		"transform" : {
+			"width" : 1,
+			"height" : 1
+		},
+		"rendering" : {
+			"image" : "rock"
+		}
+
+	},
+	"scripts" :  [
+		
+	]
+}

@@ -3,15 +3,16 @@ package com.kevlanche.engine.game.state;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.script.CompileException;
 import com.kevlanche.engine.game.state.value.variable.ObservableVariable;
-import com.kevlanche.engine.game.state.value.variable.Variable;
+import com.kevlanche.engine.game.state.value.variable.NamedVariable;
 
 public class JavaState implements ObservableState,
 		ObservableVariable.ChangeListener {
 
-	protected final List<Variable> mVars = new ArrayList<>();
+	protected final List<NamedVariable> mVars = new ArrayList<>();
 
 	private final String mName;
 	private long mLastModified;
@@ -21,12 +22,12 @@ public class JavaState implements ObservableState,
 	}
 
 	@Override
-	public List<Variable> getVariables() {
+	public List<NamedVariable> getVariables() {
 		return new ArrayList<>(mVars);
 	}
 
 	@Override
-	public State compile(Entity owner) throws CompileException {
+	public State compile(GameState game, Entity owner) throws CompileException {
 		// Type ret = newInstance();
 		// for (int i = 0; i < mVars.size(); i++) {
 		// ret.mVars.get(i).copy(mVars.get(i));
@@ -40,7 +41,7 @@ public class JavaState implements ObservableState,
 		return mName;
 	}
 
-	protected <T extends ObservableVariable> T register(T var) {
+	protected <T extends NamedVariable> T register(T var) {
 		onChanged();
 		mVars.add(var);
 		var.setChangeListener(this);
@@ -53,7 +54,7 @@ public class JavaState implements ObservableState,
 	}
 
 	private void onChanged() {
-		mLastModified = System.currentTimeMillis();
+		mLastModified = System.nanoTime();
 	}
 
 	@Override
@@ -63,7 +64,7 @@ public class JavaState implements ObservableState,
 
 	@Override
 	public void saveState() {
-		for (Variable var : mVars) {
+		for (NamedVariable var : mVars) {
 			var.saveState();
 		}
 		onChanged();
@@ -72,7 +73,7 @@ public class JavaState implements ObservableState,
 
 	@Override
 	public void restoreState() {
-		for (Variable var : mVars) {
+		for (NamedVariable var : mVars) {
 			var.restoreState();
 		}
 		onChanged();

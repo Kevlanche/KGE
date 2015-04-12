@@ -1,8 +1,8 @@
 package com.kevlanche.engine.game;
 
 import com.kevlanche.engine.game.state.JavaState;
-import com.kevlanche.engine.game.state.value.variable.FloatVariable;
-import com.kevlanche.engine.game.state.value.variable.IntVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedIntVariable;
 
 public class Kge {
 
@@ -53,25 +53,25 @@ public class Kge {
 	}
 
 	public static class Graphics extends JavaState {
-		public final IntVariable width, height;
+		public final NamedIntVariable width, height;
 
 		public Graphics() {
 			super("graphics");
 
-			width = register(new IntVariable("width", 1));
-			height = register(new IntVariable("height", 1));
+			width = register(new NamedIntVariable("width", 1));
+			height = register(new NamedIntVariable("height", 1));
 		}
 	}
 
 	public static class Physics extends JavaState {
-		public final FloatVariable gravityX, gravityY;
+		public final NamedFloatVariable gravityX, gravityY;
 
 		public Physics() {
-			this(new FloatVariable("gravityX", 0f), new FloatVariable(
+			this(new NamedFloatVariable("gravityX", 0f), new NamedFloatVariable(
 					"gravityY", -9.82f));
 		}
 
-		public Physics(FloatVariable gravityX, FloatVariable gravityY) {
+		public Physics(NamedFloatVariable gravityX, NamedFloatVariable gravityY) {
 			super("physics");
 
 			this.gravityX = register(gravityX);

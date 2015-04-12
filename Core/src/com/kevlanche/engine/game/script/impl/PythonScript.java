@@ -9,6 +9,9 @@ import org.python.core.Py;
 import org.python.core.PyDictionary;
 import org.python.core.PyFloat;
 import org.python.core.PyFunction;
+import org.python.core.PyInteger;
+import org.python.core.PyIterator;
+import org.python.core.PyList;
 import org.python.core.PyObject;
 import org.python.core.PySystemState;
 import org.python.core.PyTuple;
@@ -17,6 +20,7 @@ import org.python.core.PyTypeDerived;
 import org.python.core.adapter.PyObjectAdapter;
 import org.python.util.PythonInterpreter;
 
+import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.Kge;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.script.BaseScript;
@@ -28,6 +32,11 @@ import com.kevlanche.engine.game.state.ObservableState;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.StateUtil;
 import com.kevlanche.engine.game.state.StateUtil.OwnedState;
+import com.kevlanche.engine.game.state.value.variable.ArrayVariable;
+import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.IntVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedVariable;
+import com.kevlanche.engine.game.state.value.variable.StringVariable;
 import com.kevlanche.engine.game.state.value.variable.Variable;
 
 @SuppressWarnings("serial")
@@ -43,7 +52,7 @@ public class PythonScript extends BaseScript {
 
 		@Override
 		public PyObject __findattr_ex__(String name) {
-			Variable var = findVar(name);
+			NamedVariable var = findVar(name);
 			if (var != null) {
 				return Py.getAdapter().adapt(var);
 			} else {
@@ -51,8 +60,8 @@ public class PythonScript extends BaseScript {
 			}
 		}
 
-		private Variable findVar(String name) {
-			for (Variable var : owner.getVariables()) {
+		private NamedVariable findVar(String name) {
+			for (NamedVariable var : owner.getVariables()) {
 				if (var.getName().equals(name)) {
 					return var;
 				}
@@ -62,7 +71,7 @@ public class PythonScript extends BaseScript {
 
 		@Override
 		public void __setattr__(String name, PyObject value) {
-			Variable var = findVar(name);
+			NamedVariable var = findVar(name);
 			if (var != null) {
 				setVar(var, value);
 			}
@@ -79,6 +88,117 @@ public class PythonScript extends BaseScript {
 		@Override
 		public String toString() {
 			return "castor " + owner.toString();
+		}
+	}
+
+	private static final class DerivedArray extends PyTypeDerived {
+		private final Variable owner;
+
+		private DerivedArray(PyType subtype, Variable owner) {
+			super(subtype);
+			this.owner = owner;
+		}
+
+		@Override
+		public PyObject __findattr_ex__(String name) {
+			NamedVariable var = findVar(name);
+			if (var != null) {
+				return Py.getAdapter().adapt(var);
+			} else {
+				return null;
+			}
+		}
+		
+		@Override
+		public int __len__() {
+			return owner.asArray().length;
+		}
+
+		@Override
+		public PyObject __iter__() {
+			return new PyIterator() {
+				
+				int index = 0;
+				final Variable[] vars = owner.asArray();
+
+				@Override
+				public PyObject __iternext__() {
+					if (vars.length <= index) {
+						return null;
+					} else {
+						return Py.getAdapter().adapt(vars[index++]);
+					}
+				}
+			};
+		}
+		
+		@Override
+		public PyObject __sub__(PyObject arg0) {
+			return super.__sub__(arg0);
+		}
+
+		@Override
+		public PyObject __getitem__(int key) {
+			return super.__getitem__(key);
+		}
+
+		@Override
+		public PyObject __finditem__(int arg0) {
+			return super.__finditem__(arg0);
+		}
+
+		@Override
+		public PyObject __finditem__(String key) {
+			return super.__finditem__(key);
+		}
+		
+		@Override
+		public void __setitem__(PyObject key, PyObject value) {
+			if (key instanceof PyInteger) {
+				final Variable raw = owner.asArray()[key.asInt()];
+				setVar(raw, value);
+				return;
+			}
+			super.__setitem__(key, value);
+		}
+
+		@Override
+		public PyObject __finditem__(PyObject arg0) {
+			if (arg0 instanceof PyInteger) {
+				final Variable raw = owner.asArray()[arg0.asInt()];
+				return Py.getAdapter().adapt(raw);
+			}
+			return super.__finditem__(arg0);
+		}
+
+		private NamedVariable findVar(String name) {
+			// for (NamedVariable var : owner.getVariables()) {
+			// if (var.getName().equals(name)) {
+			// return var;
+			// }
+			// }
+			return null;
+		}
+		
+		@Override
+		public void __setattr__(String name, PyObject value) {
+			NamedVariable var = findVar(name);
+			if (var != null) {
+				setVar(var, value);
+			}
+		}
+
+		@Override
+		protected synchronized Object getJavaProxy() {
+			// Have to override this or we get a really strange
+			// error
+			// http://bugs.jython.org/issue1551
+			return this;
+		}
+
+		@Override
+		public String toString() {
+			return "arraywraoppoerr " + owner.toString();
 		}
 	}
 
@@ -155,6 +275,11 @@ public class PythonScript extends BaseScript {
 				case STRING:
 					ret = Py.getAdapter().adapt(owner.asString());
 					break;
+				case ARRAY:
+					ret = new DerivedArray(PyType.fromClass(owner.getClass(),
+							true), owner);
+					// ret = Py.getAdapter().adapt(owner.asArray());
+					break;
 				default:
 					System.err.println("Attempted to write illegal type \""
 							+ owner.getType() + "\" on var \"" + owner);
@@ -165,22 +290,43 @@ public class PythonScript extends BaseScript {
 		});
 	}
 
-	private static void setVar(final Variable owner, PyObject value) {
-		switch (owner.getType()) {
-		case FLOAT:
-			owner.set((float) value.asDouble());
-			break;
-		case INTEGER:
-			owner.set(value.asInt());
-			break;
-		case STRING:
-			owner.set(value.asString());
-			break;
-		default:
-			System.err.println("Attempted to write illegal type \""
-					+ owner.getType() + "\" on var \"" + owner);
-			throw new RuntimeException("Illegal write");
+	private static Variable toVariable(Object var) {
+
+		if (var instanceof Number) {
+			if (var instanceof Integer) {
+				return new IntVariable(((Number) var).intValue());
+			} else {
+				return new FloatVariable(((Number) var).floatValue());
+			}
+		} else if (var instanceof String) {
+			return new StringVariable((String) var);
+		} else if (var instanceof PyObject) {
+			PyObject po = (PyObject) var;
+
+			if (po instanceof PyInteger) {
+				return new IntVariable(po.asInt());
+			} else if (po.isNumberType()) {
+				return new FloatVariable((float) po.asDouble());
+			} else if (po instanceof PyList) {
+				PyList pyList = (PyList) po;
+				final int len = pyList.size();
+				final Variable[] arr = new Variable[len];
+				for (int i = 0; i < arr.length; i++) {
+					final Object obj = pyList.get(i);
+					final Variable conv = toVariable(obj);
+					arr[i] = conv;
+				}
+				return new ArrayVariable(arr);
+			} else {
+				return new StringVariable(po.asString());
+			}
 		}
+
+		throw Py.RuntimeError("Unknonwn type \"" + var + "\"");
+	}
+
+	private static void setVar(final Variable owner, PyObject value) {
+		owner.copy(toVariable(value));
 	}
 
 	public PythonScript(String name, Streamable src) {
@@ -189,8 +335,9 @@ public class PythonScript extends BaseScript {
 	}
 
 	@Override
-	public CompiledScript compile(Entity owner) throws CompileException {
-		return new Instance(owner);
+	public CompiledScript compile(GameState game, Entity owner)
+			throws CompileException {
+		return new Instance(game, owner);
 	}
 
 	private class Instance extends BaseScriptInstance {
@@ -200,7 +347,10 @@ public class PythonScript extends BaseScript {
 
 		final List<OwnedState> allReachableStates;
 
-		public Instance(Entity owner) throws CompileException {
+		private final GameState mGame;
+
+		public Instance(GameState game, Entity owner) throws CompileException {
+			mGame = game;
 			mOwner = owner;
 			mTickers = new ArrayList<>();
 			allReachableStates = new ArrayList<>();
@@ -305,6 +455,42 @@ public class PythonScript extends BaseScript {
 				});
 			}
 
+			public PyObject getEntitiesWithType(String type) {
+				final List<Entity> entities = mGame.getEntitiesByClass(type);
+				final PyObject[] ret = new PyObject[entities.size()];
+
+				for (int i = 0; i < ret.length; i++) {
+					final Entity ent = entities.get(i);
+					ret[i] = Py.getAdapter().adapt(new EntityStateGetter(ent));
+				}
+				return new PyList(ret);
+			}
+
+			public class EntityStateGetter {
+
+				private final Entity mEntity;
+				private final List<OwnedState> mEntityStates;
+
+				EntityStateGetter(Entity ent) {
+					mEntity = ent;
+					mEntityStates = StateUtil.recursiveFindStates(ent);
+				}
+
+				public PyObject getState(String name) {
+					for (OwnedState state : mEntityStates) {
+						if (state.state.getName().equals(name)) {
+							return Py.getAdapter().adapt(state.state);
+						}
+					}
+					throw Py.RuntimeError("No such state \"" + name + "\"");
+				}
+
+				@Override
+				public String toString() {
+					return "StateGetter for " + mEntity;
+				}
+			}
+
 			public void addChangeListener(PyObject state, PyFunction callback) {
 				if (!(state instanceof DerivedState)) {
 					throw Py.RuntimeError("Invalid state '" + state
@@ -330,7 +516,6 @@ public class PythonScript extends BaseScript {
 							return true;
 						}
 						lastChanged = newMod;
-
 						try {
 							callback.__call__();
 							return true;
@@ -344,10 +529,10 @@ public class PythonScript extends BaseScript {
 			}
 
 			public PyObject createPhysicsBody(PyDictionary attrs) {
-				
+
 				return null;
 			}
-			
+
 			public void interpolate(PyDictionary attrs) {
 				final Object startVal = attrs.get("start");
 				final Object endVal = attrs.get("end");

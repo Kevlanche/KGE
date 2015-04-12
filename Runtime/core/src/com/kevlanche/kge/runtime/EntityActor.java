@@ -21,7 +21,7 @@ import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.impl.Physics;
 import com.kevlanche.engine.game.state.impl.Rendering;
 import com.kevlanche.engine.game.state.impl.Transform;
-import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
 import com.kevlanche.kge.runtime.GdxAssetProvider.GdxDrawable;
 
 public class EntityActor extends Group {
@@ -86,7 +86,7 @@ public class EntityActor extends Group {
 
 			Vector2 last = new Vector2();
 			Vector2 tmp = new Vector2();
-			FloatVariable xattr, yattr;
+			NamedFloatVariable xattr, yattr;
 
 			Vector2 target = new Vector2();
 

@@ -1,6 +1,5 @@
 package com.kevlanche.engine.game.state.value;
 
-import com.kevlanche.engine.game.script.CompileException;
 import com.kevlanche.engine.game.state.value.variable.TypeException;
 
 public class FloatValue extends AbstractValue {
