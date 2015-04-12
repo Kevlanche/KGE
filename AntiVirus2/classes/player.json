@@ -1,12 +1,9 @@
 {
-	"extends" : "base",
+	"extends" : "movable",
 	"states" : {
-		"game" :  {
-			
-		},
-		"camera" : {}
 	},
 	"scripts" :  [
 		"player.py"
+		
 	]
 }

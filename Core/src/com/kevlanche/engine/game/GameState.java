@@ -123,6 +123,7 @@ public class GameState {
 	}
 
 	public List<Entity> getEntitiesByClass(String className) {
+		// TODO this should probably returns subclasses as well.
 		final List<Entity> ret = new ArrayList<>();
 		for (Entity e : mAllActors) {
 			if (e.getClassName().equals(className)) {

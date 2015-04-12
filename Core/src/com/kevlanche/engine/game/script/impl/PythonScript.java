@@ -3,6 +3,7 @@ package com.kevlanche.engine.game.script.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.python.core.Py;
@@ -108,7 +109,7 @@ public class PythonScript extends BaseScript {
 				return null;
 			}
 		}
-		
+
 		@Override
 		public int __len__() {
 			return owner.asArray().length;
@@ -117,7 +118,7 @@ public class PythonScript extends BaseScript {
 		@Override
 		public PyObject __iter__() {
 			return new PyIterator() {
-				
+
 				int index = 0;
 				final Variable[] vars = owner.asArray();
 
@@ -131,7 +132,7 @@ public class PythonScript extends BaseScript {
 				}
 			};
 		}
-		
+
 		@Override
 		public PyObject __sub__(PyObject arg0) {
 			return super.__sub__(arg0);
@@ -151,7 +152,7 @@ public class PythonScript extends BaseScript {
 		public PyObject __finditem__(String key) {
 			return super.__finditem__(key);
 		}
-		
+
 		@Override
 		public void __setitem__(PyObject key, PyObject value) {
 			if (key instanceof PyInteger) {
@@ -179,7 +180,7 @@ public class PythonScript extends BaseScript {
 			// }
 			return null;
 		}
-		
+
 		@Override
 		public void __setattr__(String name, PyObject value) {
 			NamedVariable var = findVar(name);
@@ -504,28 +505,52 @@ public class PythonScript extends BaseScript {
 				}
 
 				final ObservableState actualState = (ObservableState) der.owner;
-
-				mInstance.mTickers.add(new Updateable() {
-
-					long lastChanged = actualState.getLastModified();
-
-					@Override
-					public boolean tick(float dt) {
-						final long newMod = actualState.getLastModified();
-						if (lastChanged == newMod) {
-							return true;
-						}
-						lastChanged = newMod;
-						try {
-							callback.__call__();
-							return true;
-						} catch (Exception e) {
-							Thread.dumpStack();
-							e.printStackTrace();
-							return false;
-						}
+				for (Updateable upd : mInstance.mTickers) {
+					if (upd instanceof StateChangeListener
+							&& ((StateChangeListener) upd).actualState
+									.equals(actualState)) {
+						((StateChangeListener) upd).cancelled = true;
 					}
-				});
+				}
+
+				mInstance.mTickers.add(new StateChangeListener(actualState,
+						callback));
+			}
+
+			private class StateChangeListener implements Updateable {
+				private final ObservableState actualState;
+				long lastChanged;
+				boolean cancelled = false;
+				private final PyFunction callback;
+
+				private StateChangeListener(ObservableState actualState,
+						PyFunction callback) {
+					this.actualState = actualState;
+					this.callback = callback;
+					lastChanged = actualState.getLastModified();
+				}
+
+				@Override
+				public boolean tick(float dt) {
+					if (cancelled) {
+						return false;
+					}
+
+					final long newMod = actualState.getLastModified();
+					if (lastChanged == newMod) {
+						return true;
+					}
+					lastChanged = newMod;
+					try {
+						callback.__call__();
+						lastChanged = actualState.getLastModified();
+						return true;
+					} catch (Exception e) {
+						Thread.dumpStack();
+						e.printStackTrace();
+						return false;
+					}
+				}
 			}
 
 			public PyObject createPhysicsBody(PyDictionary attrs) {
@@ -580,9 +605,17 @@ public class PythonScript extends BaseScript {
 				}
 
 				for (Updateable upd : mInstance.mTickers) {
-					if (upd instanceof Interpolator
-							&& ((Interpolator) upd).mSetter.equals(callback)) {
-						((Interpolator) upd).cancel();
+					if (upd instanceof Interpolator) {
+						final Interpolator it = (Interpolator) upd;
+						if (it.mSetter.equals(callback)) {
+							if (Arrays.equals(it.mMax, end)) {
+								System.out
+										.println("Same end goal as existing interpolator. Not doing anything");
+								return;
+							}
+							((Interpolator) upd).cancel();
+						}
+
 					}
 				}
 

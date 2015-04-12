@@ -1,8 +1,4 @@
 {
-	"player_x" : 0,
-	"player_y" : 0,
-	"player_target_x" : 0,
-	"player_target_y" : 0,
 	"board" : [],
 	"__shared" : true
 }

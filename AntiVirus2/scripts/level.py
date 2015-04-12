@@ -15,12 +15,15 @@ def create():
 
 	owner.addChangeListener(transform, layout)
 	owner.addChangeListener(kge.graphics, layout)
-	owner.addChangeListener(game, movePlayer)
+
+	for player in owner.getEntitiesWithType("player"):
+		owner.addChangeListener(player.getState("gamePosition"), lambda: playerMoved(player))
 
 	layout()
 
 	updateBoard()
 	dumpBoard()
+
 
 def updateBoard():
 	w = int(transform.width)
@@ -28,10 +31,9 @@ def updateBoard():
 	
 	game.board = [[0 for i in range(h)] for j in range(w)] 
 	for rock in owner.getEntitiesWithType("rock"):
-		rockpos = rock.getState("transform")
+		rockpos = rock.getState("gamePosition")
 		rockx = int(rockpos.x)
 		rocky = int(rockpos.y)
-		print("rock @ " + str(rockx) +", " + str(rocky))
 		game.board[rockx][rocky] = 1
 	
 
@@ -58,56 +60,52 @@ def layout():
 	camera.y = transform.y + (transform.height - disph) / 2
 	camera.width = dispw
 	camera.height = disph
-	camera.up = transform.rotation + 90
+	camera.up = 90
 
 	overx = float(transform.width)/dispw
 	overy = float(transform.height)/disph
 	camera.zoom = 1.1 * max(overx, overy)
 
 
+
 def clamp(val, minVal, maxVal):
 	return max(minVal, min(maxVal, val))
 
-def movePlayer():
-	gx = game.player_x
-	tx = game.player_target_x
-	gy = game.player_y
-	ty = game.player_target_y
+
+def playerMoved(player):
+	pos = player.getState("gamePosition")
+	gx = pos.x
+	tx = pos.reqx
+	gy = pos.y
+	ty = pos.reqy
 
 	if tx < 0 or tx >= len(game.board):
-		game.player_target_x = clamp(tx, 0, len(game.board)-1)
+		pos.reqx = clamp(tx, 0, len(game.board)-1)
 		return
 	elif ty < 0 or ty >= len(game.board[tx]):
-		game.player_target_y = clamp(ty, 0, len(game.board[tx])-1)
+		pos.reqy = clamp(ty, 0, len(game.board[tx])-1)
 		return
 
 	mvx = tx - gx
 	mvy = ty - gy
 
-	movedRock = False
-
 	if not emptyBoard(tx,ty):
 		if emptyBoard(tx+mvx, ty+mvy):
 			for rock in owner.getEntitiesWithType("rock"):
-				rockPos = rock.getState("transform")
+				rockPos = rock.getState("gamePosition")
 				if rockPos.x == tx and rockPos.y == ty:
-					global toMove
-					toMove = rockPos
-					owner.interpolate({
-						'start' : (tx, ty),
-						'end' : (tx + mvx, ty + mvy),
-						'duration' : 0.05,
-						'callback': moveRock
-					})
-					movedRock = True
+					rockPos.x = tx + mvx
+					rockPos.y = ty + mvy
+
+					updateBoard()
 
 
-	if emptyBoard(tx,ty) or movedRock:
-		game.player_x = tx
-		game.player_y = ty
+	if not emptyBoard(tx,ty):
+		pos.reqx = pos.x
+		pos.reqy = pos.y
 	else:
-		game.player_target_x = gx
-		game.player_target_y = gy
+		pos.x = tx
+		pos.y = ty
 
 
 def emptyBoard(x,y):
@@ -115,11 +113,3 @@ def emptyBoard(x,y):
 		return False
 	else:
 		return game.board[x][y] == 0
-
-
-toMove = 0
-
-def moveRock(x, y):
-	toMove.x = x
-	toMove.y = y
-	updateBoard()
