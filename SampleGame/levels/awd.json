@@ -1,0 +1,1 @@
+[{"class":"base","vars":{"position":{"x":"0.15625048","y":"13.499999"},"size":{"width":"10.0","height":"16.0"},"rotation":{"rotation":"-90.0"}},"children":[{"class":"player","vars":{"position":{"x":"2.0","y":"-1.0"},"size":{"width":"4.656252","height":"3.968749"},"rendering":{"image":"block_background_clone"},"game":{"x":"5"}}}]}]

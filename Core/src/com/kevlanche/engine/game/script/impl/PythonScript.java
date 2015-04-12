@@ -24,13 +24,63 @@ import com.kevlanche.engine.game.script.BaseScriptInstance;
 import com.kevlanche.engine.game.script.CompileException;
 import com.kevlanche.engine.game.script.CompiledScript;
 import com.kevlanche.engine.game.script.Script;
+import com.kevlanche.engine.game.state.ObservableState;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.StateUtil;
-import com.kevlanche.engine.game.state.StateUtil.FoundState;
-import com.kevlanche.engine.game.state.var.Variable;
+import com.kevlanche.engine.game.state.StateUtil.OwnedState;
+import com.kevlanche.engine.game.state.value.variable.Variable;
 
 @SuppressWarnings("serial")
 public class PythonScript extends BaseScript {
+
+	private static final class DerivedState extends PyTypeDerived {
+		private final State owner;
+
+		private DerivedState(PyType subtype, State owner) {
+			super(subtype);
+			this.owner = owner;
+		}
+
+		@Override
+		public PyObject __findattr_ex__(String name) {
+			Variable var = findVar(name);
+			if (var != null) {
+				return Py.getAdapter().adapt(var);
+			} else {
+				return null;
+			}
+		}
+
+		private Variable findVar(String name) {
+			for (Variable var : owner.getVariables()) {
+				if (var.getName().equals(name)) {
+					return var;
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public void __setattr__(String name, PyObject value) {
+			Variable var = findVar(name);
+			if (var != null) {
+				setVar(var, value);
+			}
+		}
+
+		@Override
+		protected synchronized Object getJavaProxy() {
+			// Have to override this or we get a really strange
+			// error
+			// http://bugs.jython.org/issue1551
+			return this;
+		}
+
+		@Override
+		public String toString() {
+			return "castor " + owner.toString();
+		}
+	}
 
 	public interface Streamable {
 		InputStream read() throws IOException;
@@ -77,49 +127,8 @@ public class PythonScript extends BaseScript {
 			@Override
 			public PyObject adapt(Object o) {
 				final State owner = (State) o;
-				final PyType ret = new PyTypeDerived(PyType.fromClass(
-						owner.getClass(), true)) {
-
-					@Override
-					public PyObject __findattr_ex__(String name) {
-						Variable var = findVar(name);
-						if (var != null) {
-							return Py.getAdapter().adapt(var);
-						} else {
-							return null;
-						}
-					}
-
-					private Variable findVar(String name) {
-						for (Variable var : owner.getVariables()) {
-							if (var.getName().equals(name)) {
-								return var;
-							}
-						}
-						return null;
-					}
-
-					@Override
-					public void __setattr__(String name, PyObject value) {
-						Variable var = findVar(name);
-						if (var != null) {
-							setVar(var, value);
-						}
-					}
-
-					// @Override
-					// protected synchronized Object getJavaProxy() {
-					// // Have to override this or we get a really strange
-					// // error
-					// // http://bugs.jython.org/issue1551
-					// return this;
-					// }
-					//
-					// @Override
-					// public String toString() {
-					// return "castor " + owner.toString();
-					// }
-				};
+				final PyType ret = new DerivedState(PyType.fromClass(
+						owner.getClass(), true), owner);
 				return ret;
 			}
 		});
@@ -174,7 +183,8 @@ public class PythonScript extends BaseScript {
 		}
 	}
 
-	public PythonScript(Streamable src) {
+	public PythonScript(String name, Streamable src) {
+		super(name);
 		mSrc = src;
 	}
 
@@ -186,35 +196,36 @@ public class PythonScript extends BaseScript {
 	private class Instance extends BaseScriptInstance {
 
 		private Entity mOwner;
-		private PyObject mTickFunc;
-		private final List<Interpolator> mInterpolators;
+		private final List<Updateable> mTickers;
+
+		final List<OwnedState> allReachableStates;
 
 		public Instance(Entity owner) throws CompileException {
 			mOwner = owner;
-			mTickFunc = reload();
-			mInterpolators = new ArrayList<>();
+			mTickers = new ArrayList<>();
+			allReachableStates = new ArrayList<>();
+			reload();
 		}
 
-		private PyObject reload() throws CompileException {
+		private void reload() throws CompileException {
 
-			final List<FoundState> allReachableStates = StateUtil
-					.recursiveFindStates(mOwner);
 			try {
+				allReachableStates.clear();
+				allReachableStates
+						.addAll(StateUtil.recursiveFindStates(mOwner));
+
 				try (PythonInterpreter pi = new PythonInterpreter()) {
 					pi.set("kge", Py.getAdapter().adapt(Kge.getInstance()));
 					pi.set("owner",
 							Py.getAdapter().adapt(
 									new ScriptAccessor(mOwner,
 											PythonScript.this, this)));
-					for (FoundState state : allReachableStates) {
-						pi.set(state.state.getName(),
-								Py.getAdapter().adapt(state.state));
-					}
 
 					try (InputStream in = mSrc.read()) {
 						pi.execfile(in, mSrc.toString());
 					}
-					return pi.eval("tick");
+					PyObject createFunc = pi.eval("create");
+					createFunc.__call__();
 				}
 			} catch (Exception e) {
 				Thread.dumpStack();
@@ -225,111 +236,186 @@ public class PythonScript extends BaseScript {
 
 		@Override
 		public void tick() {
-			try {
-				mTickFunc.__call__();
-			} catch (Exception e) {
-				Thread.dumpStack();
-				e.printStackTrace();
-			}
-			for (int i = 0; i < mInterpolators.size(); i++) {
-				if (mInterpolators.get(i).update(Kge.getInstance().time.dt)) {
-					mInterpolators.remove(i);
+			for (int i = 0; i < mTickers.size(); i++) {
+				if (!mTickers.get(i).tick(Kge.getInstance().time.dt)) {
+					mTickers.remove(i);
 					i--;
 				}
 			}
 		}
+
+		public class ScriptAccessor {
+
+			private final Entity mTarget;
+			private final Script mSelf;
+			private final Instance mInstance;
+
+			public ScriptAccessor(Entity target, Script self, Instance instance) {
+				mTarget = target;
+				mSelf = self;
+				mInstance = instance;
+			}
+
+			public void removeSelf() {
+				System.out.println("Remove " + mSelf + " from " + mTarget);
+				mTarget.removeScript(mSelf);
+			}
+
+			public void addScript(Object name) {
+				System.out.println("Add script! " + name + " to " + mTarget);
+			}
+
+			public void finishInterpolation(PyFunction function) {
+				for (Updateable upd : mInstance.mTickers) {
+					if (upd instanceof Interpolator) {
+						Interpolator interpolator = (Interpolator) upd;
+						if (interpolator.mSetter.equals(function)) {
+							interpolator.callSetter(1f);
+							mInstance.mTickers.remove(upd);
+						}
+						return;
+					}
+				}
+			}
+
+			public PyObject getState(String name) {
+				for (OwnedState state : allReachableStates) {
+					if (state.state.getName().equals(name)) {
+						return Py.getAdapter().adapt(state.state);
+					}
+				}
+				throw Py.RuntimeError("No such state \"" + name + "\"");
+			}
+
+			public void scheduleUpdate(PyFunction func) {
+				System.out.println("Scheduled update on " + func);
+				mTickers.add(new Updateable() {
+
+					@Override
+					public boolean tick(float dt) {
+						try {
+							func.__call__();
+							return true;
+						} catch (Exception e) {
+							e.printStackTrace();
+							Thread.dumpStack();
+							return false;
+						}
+					}
+				});
+			}
+
+			public void addChangeListener(PyObject state, PyFunction callback) {
+				if (!(state instanceof DerivedState)) {
+					throw Py.RuntimeError("Invalid state '" + state
+							+ "', can't listen to it for changes");
+				}
+				final DerivedState der = (DerivedState) state;
+
+				if (!(der.owner instanceof ObservableState)) {
+					throw Py.RuntimeError("State '" + state
+							+ "' isn't obserable");
+				}
+
+				final ObservableState actualState = (ObservableState) der.owner;
+
+				mInstance.mTickers.add(new Updateable() {
+
+					long lastChanged = actualState.getLastModified();
+
+					@Override
+					public boolean tick(float dt) {
+						final long newMod = actualState.getLastModified();
+						if (lastChanged == newMod) {
+							return true;
+						}
+						lastChanged = newMod;
+
+						try {
+							callback.__call__();
+							return true;
+						} catch (Exception e) {
+							Thread.dumpStack();
+							e.printStackTrace();
+							return false;
+						}
+					}
+				});
+			}
+
+			public void interpolate(PyDictionary attrs) {
+				final Object startVal = attrs.get("start");
+				final Object endVal = attrs.get("end");
+				final Object duration = attrs.get("duration");
+				final Object callback = attrs.get("callback");
+
+				if (!(startVal instanceof Number || startVal instanceof PyTuple)) {
+					throw Py.RuntimeError("'start' must be specified as a number of typle");
+				}
+				if (!(endVal instanceof Number || endVal instanceof PyTuple)) {
+					throw Py.RuntimeError("'end' must be specified as a number of typle");
+				}
+				if (!(duration instanceof Number)) {
+					throw Py.RuntimeError("'duration' must be specified as a number");
+				}
+				if (!(callback instanceof PyFunction)) {
+					throw Py.RuntimeError("'callback' must be specified as a function");
+				}
+
+				final float[] start, end;
+
+				if (startVal instanceof PyTuple) {
+					PyTuple startTuple = (PyTuple) startVal;
+					if (!(endVal instanceof PyTuple)) {
+						throw Py.RuntimeError("Both arguments must be tuples if one of them are");
+					}
+					PyTuple endTuple = (PyTuple) endVal;
+
+					if (startTuple.size() != endTuple.size()) {
+						throw Py.RuntimeError("Start/end arguments must be same length");
+					}
+
+					start = new float[startTuple.size()];
+					end = new float[endTuple.size()];
+					for (int i = 0; i < start.length; i++) {
+						start[i] = ((Number) startTuple.get(i)).floatValue();
+						end[i] = ((Number) endTuple.get(i)).floatValue();
+					}
+				} else {
+					start = new float[1];
+					end = new float[1];
+
+					start[0] = ((Number) startVal).floatValue();
+					end[0] = ((Number) endVal).floatValue();
+				}
+
+				for (Updateable upd : mInstance.mTickers) {
+					if (upd instanceof Interpolator
+							&& ((Interpolator) upd).mSetter.equals(callback)) {
+						((Interpolator) upd).cancel();
+					}
+				}
+
+				mInstance.mTickers
+						.add(new Interpolator(start, end, ((Number) duration)
+								.floatValue(), (PyFunction) callback));
+			}
+		}
 	}
 
-	public static class ScriptAccessor {
-
-		private final Entity mTarget;
-		private final Script mSelf;
-		private final Instance mInstance;
-
-		public ScriptAccessor(Entity target, Script self, Instance instance) {
-			mTarget = target;
-			mSelf = self;
-			mInstance = instance;
-		}
-
-		public void removeSelf() {
-			System.out.println("Remove " + mSelf + " from " + mTarget);
-			mTarget.removeScript(mSelf);
-		}
-
-		public void addScript(Object name) {
-			System.out.println("Add script! " + name + " to " + mTarget);
-		}
-		
-		public void finishInterpolation(PyFunction function) {
-			for (Interpolator interpolator : mInstance.mInterpolators) {
-				if (interpolator.mSetter.equals(function)) {
-					interpolator.callSetter(1f);
-					mInstance.mInterpolators.remove(interpolator);
-					return;
-				}
-			}
-		}
-
-		public void interpolate(PyDictionary attrs) {
-			final Object startVal = attrs.get("start");
-			final Object endVal = attrs.get("end");
-			final Object duration = attrs.get("duration");
-			final Object callback = attrs.get("callback");
-
-			if (!(startVal instanceof Number || startVal instanceof PyTuple)) {
-				throw Py.RuntimeError("'start' must be specified as a number of typle");
-			}
-			if (!(endVal instanceof Number || endVal instanceof PyTuple)) {
-				throw Py.RuntimeError("'end' must be specified as a number of typle");
-			}
-			if (!(duration instanceof Number)) {
-				throw Py.RuntimeError("'duration' must be specified as a number");
-			}
-			if (!(callback instanceof PyFunction)) {
-				throw Py.RuntimeError("'callback' must be specified as a function");
-			}
-
-			final float[] start, end;
-
-			if (startVal instanceof PyTuple) {
-				PyTuple startTuple = (PyTuple) startVal;
-				if (!(endVal instanceof PyTuple)) {
-					throw Py.RuntimeError("Both arguments must be tuples if one of them are");
-				}
-				PyTuple endTuple = (PyTuple) endVal;
-
-				if (startTuple.size() != endTuple.size()) {
-					throw Py.RuntimeError("Start/end arguments must be same length");
-				}
-
-				start = new float[startTuple.size()];
-				end = new float[endTuple.size()];
-				for (int i = 0; i < start.length; i++) {
-					start[i] = ((Number) startTuple.get(i))
-							.floatValue();
-					end[i] = ((Number) endTuple.get(i)).floatValue();
-				}
-			} else {
-				start = new float[1];
-				end = new float[1];
-
-				start[0] = ((Number) startVal).floatValue();
-				end[0] = ((Number) endVal).floatValue();
-			}
-
-			mInstance.mInterpolators.add(new Interpolator(start, end,
-					((Number) duration).floatValue(), (PyFunction) callback));
-		}
+	public interface Updateable {
+		boolean tick(float dt);
 	}
 
-	private static class Interpolator {
+	private static class Interpolator implements Updateable {
 		private float[] mMin;
 		private float[] mMax;
 		private PyFunction mSetter;
 
 		private float mPassedTime, mDuration;
 		final PyFloat[] mCallTmp;
+
+		private boolean isCancelled;
 
 		public Interpolator(float[] min, float[] max, float duration,
 				PyFunction setter) {
@@ -338,9 +424,13 @@ public class PythonScript extends BaseScript {
 			mCallTmp = new PyFloat[mMin.length];
 			mSetter = setter;
 			mDuration = duration;
+			isCancelled = false;
 		}
 
-		public boolean update(float dt) {
+		public boolean tick(float dt) {
+			if (isCancelled) {
+				return false;
+			}
 			mPassedTime += dt;
 
 			final float rel = mPassedTime
@@ -348,11 +438,15 @@ public class PythonScript extends BaseScript {
 
 			if (rel >= 1f) {
 				callSetter(1f);
-				return true;
+				return false;
 			} else {
 				callSetter(rel);
-				return false;
+				return true;
 			}
+		}
+
+		void cancel() {
+			isCancelled = true;
 		}
 
 		private void callSetter(float relative) {

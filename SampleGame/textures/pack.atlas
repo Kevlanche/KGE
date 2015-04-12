@@ -5,203 +5,203 @@ filter: Nearest,Nearest
 repeat: none
 alphabet
   rotate: false
-  xy: 2, 54
+  xy: 244, 58
   size: 128, 64
   orig: 128, 64
   offset: 0, 0
   index: -1
+bg
+  rotate: false
+  xy: 2, 2
+  size: 240, 120
+  orig: 240, 120
+  offset: 0, 0
+  index: -1
 black
   rotate: false
-  xy: 198, 102
+  xy: 440, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_background
   rotate: false
-  xy: 2, 2
+  xy: 244, 6
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_background_button
   rotate: false
-  xy: 20, 36
+  xy: 262, 40
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_background_clone
   rotate: false
-  xy: 198, 84
+  xy: 440, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_background_double
   rotate: false
-  xy: 216, 102
+  xy: 458, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_background_ice
   rotate: false
-  xy: 20, 18
+  xy: 262, 22
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_background_reverse
   rotate: false
-  xy: 38, 36
+  xy: 280, 40
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_blockade
   rotate: false
-  xy: 198, 66
+  xy: 440, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_code
   rotate: false
-  xy: 216, 84
+  xy: 458, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_code_check
   rotate: false
-  xy: 234, 102
+  xy: 476, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_code_nofill
   rotate: false
-  xy: 38, 18
+  xy: 494, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block_missing_code
   rotate: false
-  xy: 56, 36
+  xy: 280, 22
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 boom
   rotate: false
-  xy: 216, 66
+  xy: 298, 40
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 button_pause
   rotate: false
-  xy: 234, 84
+  xy: 458, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 cmd_death
   rotate: false
-  xy: 56, 18
+  xy: 476, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 cmd_line
   rotate: false
-  xy: 132, 54
+  xy: 374, 58
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: -1
 cmd_move
   rotate: false
-  xy: 74, 36
+  xy: 494, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 cmd_wait
   rotate: false
-  xy: 234, 66
+  xy: 298, 22
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 energy_missing
   rotate: false
-  xy: 74, 18
+  xy: 316, 40
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 enter
   rotate: false
-  xy: 2, 20
+  xy: 244, 24
   size: 16, 32
   orig: 16, 32
   offset: 0, 0
   index: -1
-error - Copy
-  rotate: false
-  xy: 92, 36
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: -1
 error
   rotate: false
-  xy: 92, 36
+  xy: 476, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 player
   rotate: false
-  xy: 92, 18
+  xy: 494, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 player_evil
   rotate: false
-  xy: 110, 36
+  xy: 316, 22
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 player_evil_blind
   rotate: false
-  xy: 110, 18
+  xy: 334, 40
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 rock
   rotate: false
-  xy: 128, 36
+  xy: 334, 22
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 sound_off
   rotate: false
-  xy: 128, 18
+  xy: 352, 40
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 sound_on
   rotate: false
-  xy: 146, 36
+  xy: 352, 22
   size: 16, 16
   orig: 16, 16
   offset: 0, 0

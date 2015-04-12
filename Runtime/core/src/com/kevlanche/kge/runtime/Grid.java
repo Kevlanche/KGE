@@ -19,7 +19,6 @@ public class Grid extends Actor {
 			@Override
 			public boolean touchDown(InputEvent event, float x, float y,
 					int pointer, int button) {
-				System.out.println("td?");
 				touch.set(x, y);
 				return true;
 			}
@@ -55,11 +54,11 @@ public class Grid extends Actor {
 		float w = stage.getWidth();
 		float h = stage.getHeight();
 		
-		final int miny = (int)(-h/2 + stage.getCamera().position.y);
-		final int maxy = (int)(miny + h);
+		final int miny = (int)(-3*h/2 + stage.getCamera().position.y);
+		final int maxy = (int)(miny + 3*h);
 		
-		final int minx = (int)(-w/2 + stage.getCamera().position.x);
-		final int maxx = (int)(minx + w);
+		final int minx = (int)(-3*w/2 + stage.getCamera().position.x);
+		final int maxx = (int)(minx + 3*w);
 		
 		for (int y = miny; y < maxy; y++) {
 			if (y % 50 == 0) {

@@ -10,21 +10,34 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
 import com.badlogic.gdx.Gdx;
+import com.kevlanche.engine.game.EntityLoader;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
+import com.kevlanche.engine.game.actor.BaseEntity;
 import com.kevlanche.engine.game.actor.Entity;
+import com.kevlanche.engine.game.actor.EntityDefinition;
 import com.kevlanche.engine.game.assets.AssetProvider;
 import com.kevlanche.engine.game.assets.Drawable;
+import com.kevlanche.engine.game.assets.StateDefinition;
+import com.kevlanche.engine.game.assets.UserStateDefinition;
+import com.kevlanche.engine.game.script.Script;
+import com.kevlanche.engine.game.script.ScriptDefinition;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.impl.Rendering;
 
@@ -45,7 +58,13 @@ public class LeftPanel extends BasePanel {
 
 			@Override
 			public void onGenericChange() {
-				buildUI();
+				SwingUtilities.invokeLater(new Runnable() {
+
+					@Override
+					public void run() {
+						buildUI();
+					}
+				});
 			}
 		});
 
@@ -53,7 +72,7 @@ public class LeftPanel extends BasePanel {
 		mContentPanel = new JPanel();
 		add(mContentPanel, BorderLayout.NORTH);
 
-		// final JPanel btnPanel = new JPanel(new BorderLayout());
+		final JPanel btnPanel = new JPanel(new BorderLayout());
 		// final JButton remove = new JButton("-");
 		// remove.addActionListener(new ActionListener() {
 		//
@@ -66,22 +85,6 @@ public class LeftPanel extends BasePanel {
 		// }
 		// });
 		// btnPanel.add(remove, BorderLayout.WEST);
-		// final JButton add = new JButton("+");
-		// add.addActionListener(new ActionListener() {
-		//
-		// @Override
-		// public void actionPerformed(ActionEvent e) {
-		// Gdx.app.postRunnable(new Runnable() {
-		// @Override
-		// public void run() {
-		// mState.addEntity(new BoxedEntity(null,
-		// KgeRuntime.mWorld));
-		// }
-		// });
-		// }
-		// });
-		// btnPanel.add(add, BorderLayout.EAST);
-		// add(btnPanel, BorderLayout.SOUTH);
 
 		mAssetPanel = new JPanel();
 		mAssetPanel.setLayout(new BoxLayout(mAssetPanel, BoxLayout.Y_AXIS));
@@ -94,6 +97,70 @@ public class LeftPanel extends BasePanel {
 		buildUI();
 	}
 
+	private class EntityAdder implements Runnable {
+
+		private final Entity mParent;
+
+		public EntityAdder(Entity parent) {
+			mParent = parent;
+		}
+
+		@Override
+		public void run() {
+			final AssetProvider assetProvider = mState.getAssetProvider();
+			final List<EntityDefinition> availClasses = assetProvider
+					.getClasses();
+
+			if (availClasses.isEmpty()) {
+				return;
+			}
+
+			final EntityDefinition[] opts = availClasses
+					.toArray(new EntityDefinition[availClasses.size()]);
+
+			SwingUtilities.invokeLater(new Runnable() {
+
+				@Override
+				public void run() {
+					System.out.println("showing popup on "
+							+ Thread.currentThread());
+					final int sel = JOptionPane.showOptionDialog(
+							LeftPanel.this, "What class should be added?",
+							"Add class", JOptionPane.DEFAULT_OPTION,
+							JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
+					if (sel >= 0 && sel < opts.length) {
+
+						Gdx.app.postRunnable(new Runnable() {
+
+							@Override
+							public void run() {
+								try {
+									final EntityDefinition clazz = opts[sel];
+									final Entity loaded = new EntityLoader()
+											.load(mParent, clazz,
+													mState.getAssetProvider());
+									addRecursive(loaded);
+								} catch (Exception e) {
+									Thread.dumpStack();
+									e.printStackTrace();
+									System.out.println("no entity for you!");
+								}
+							}
+
+							private void addRecursive(final Entity loaded) {
+								mState.addEntity(loaded);
+								for (Entity child : loaded.getChildren()) {
+									addRecursive(child);
+								}
+							}
+						});
+					}
+				}
+			});
+
+		}
+	}
+
 	private void buildUI() {
 		mContentPanel.removeAll();
 
@@ -102,24 +169,22 @@ public class LeftPanel extends BasePanel {
 				1.0, GridBagConstraints.NORTHWEST,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 4), 5, 5);
 
-		for (Entity a : mState.getEntities()) {
-			final JPanel actorPanel = new JPanel(new BorderLayout());
-
-			if (mState.getCurrentSelection() == a) {
-				actorPanel.setBackground(Color.MAGENTA);
-			} else {
-
-				final MouseAdapter ma = new MouseHandler(actorPanel, a);
-				actorPanel.addMouseListener(ma);
-				actorPanel.addMouseMotionListener(ma);
+		for (final Entity a : mState.getEntities()) {
+			if (a.getParent() == null) {
+				addEntity(gbc, a);
 			}
-
-			final JLabel nameLabel = new JLabel(a.toString());
-			actorPanel.add(nameLabel, BorderLayout.CENTER);
-
-			mContentPanel.add(actorPanel, gbc);
-			gbc.gridy++;
 		}
+
+		final JButton addChildless = new JButton("+");
+		addChildless.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Gdx.app.postRunnable(new EntityAdder(null));
+			}
+		});
+		mContentPanel.add(addChildless, gbc);
+		gbc.gridy++;
 
 		mAssetPanel.removeAll();
 		final AssetProvider provider = mState.getAssetProvider();
@@ -158,6 +223,45 @@ public class LeftPanel extends BasePanel {
 
 		revalidate();
 		repaint();
+	}
+
+	private void addEntity(final GridBagConstraints gbc, final Entity a) {
+		final JPanel actorPanel = new JPanel(new BorderLayout());
+
+		if (mState.getCurrentSelection() == a) {
+			actorPanel.setBackground(Color.MAGENTA);
+		} else {
+
+			final MouseAdapter ma = new MouseHandler(actorPanel, a);
+			actorPanel.addMouseListener(ma);
+			actorPanel.addMouseMotionListener(ma);
+		}
+
+		final JLabel nameLabel = new JLabel(a.toString());
+		actorPanel.add(nameLabel, BorderLayout.CENTER);
+		final JButton addChild = new JButton("+");
+		addChild.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Gdx.app.postRunnable(new EntityAdder(a));
+			}
+		});
+		actorPanel.add(addChild, BorderLayout.EAST);
+
+		mContentPanel.add(actorPanel, gbc);
+		gbc.gridy++;
+
+		final List<Entity> children = a.getChildren();
+		if (children != null && !children.isEmpty()) {
+			gbc.insets.left += 10;
+
+			for (Entity child : children) {
+				addEntity(gbc, child);
+			}
+
+			gbc.insets.left -= 10;
+		}
 	}
 
 	private final class MouseHandler extends MouseAdapter {

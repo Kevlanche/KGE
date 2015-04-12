@@ -1,11 +1,12 @@
 package com.kevlanche.engine.game.state.impl;
 
 import com.kevlanche.engine.game.state.JavaState;
-import com.kevlanche.engine.game.state.var.BoolVariable;
-import com.kevlanche.engine.game.state.var.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.BoolVariable;
+import com.kevlanche.engine.game.state.value.variable.FloatVariable;
 
 public class Physics extends JavaState {
 
+	public static final String NAME = "physics";
 	public final BoolVariable fixedRotation, staticBody;
 	public final FloatVariable velocityX, velocityY;
 
@@ -16,7 +17,7 @@ public class Physics extends JavaState {
 
 	public Physics(FixedRotation fixedRotation, Static simulate,
 			VelocityX velocityX, VelocityY velocityY) {
-		super("physics");
+		super(NAME);
 
 		this.fixedRotation = register(fixedRotation);
 		this.staticBody = register(simulate);

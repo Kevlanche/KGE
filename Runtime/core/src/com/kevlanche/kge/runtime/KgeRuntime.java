@@ -20,6 +20,8 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
 import com.kevlanche.engine.game.actor.Entity;
+import com.kevlanche.kge.runtime.entity.Box2dEntity;
+import com.kevlanche.kge.runtime.entity.DefaultEntity;
 
 public class KgeRuntime extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -62,7 +64,28 @@ public class KgeRuntime extends ApplicationAdapter {
 
 					@Override
 					public void run() {
-						actorGroup.addActor(new EntityActor(mState, entity));
+						add(entity);
+					}
+
+					private EntityActor add(final Entity entity) {
+						final Entity parent = entity.getParent();
+						Group parentActor = actorGroup;
+						if (parent != null) {
+							parentActor = add(parent);
+						} else {
+							for (Actor actor : actorGroup.getChildren()) {
+								if (actor instanceof EntityActor
+										&& ((EntityActor) actor)
+												.getWrappedEntity().equals(
+														entity)) {
+									return (EntityActor) actor;
+								}
+							}
+						}
+
+						final EntityActor ret = new EntityActor(mState, entity);
+						parentActor.addActor(ret);
+						return ret;
 					}
 				});
 			}
@@ -92,8 +115,7 @@ public class KgeRuntime extends ApplicationAdapter {
 				for (Actor actor : actorGroup.getChildren()) {
 					if (actor instanceof EntityActor) {
 						final EntityActor ent = (EntityActor) actor;
-						if (ent.isBeingPressed) {
-
+						if (ent.isBeingPressed()) {
 							ent.scroll(amount);
 							return true;
 						}
@@ -118,17 +140,7 @@ public class KgeRuntime extends ApplicationAdapter {
 				if (mState.isRunning()) {
 					return false;
 				}
-				if (character == 'a') {
-					Vector2 spawn = new Vector2(Gdx.input.getX(), Gdx.input
-							.getY());
-					mStage.screenToStageCoordinates(spawn);
-
-					final BoxedEntity ent = new BoxedEntity(null, mWorld);
-					ent.position.x.set(spawn.x);
-					ent.position.y.set(spawn.y);
-
-					mState.addEntity(ent);
-				} else if (character == 'd') {
+				if (character == 'd') {
 					final Entity focus = mState.getCurrentSelection();
 					if (focus != null) {
 						mState.removeEntity(focus);
@@ -142,9 +154,8 @@ public class KgeRuntime extends ApplicationAdapter {
 
 		Gdx.input.setInputProcessor(input);
 
-		mWorld = new World(new Vector2(0f, 0f), false);
+		mWorld = new World(new Vector2(0f, -9.82f), false);
 		b2d = new Box2DDebugRenderer();
-		mState.addEntity(new BoxedEntity(null, mWorld));
 	}
 
 	public GameState getState() {

@@ -1,0 +1,14 @@
+{
+	"extends" : "base",
+	"states" : {
+		"game" :  {
+			"x" : 5 // Override default value
+		},
+		"rendering" : {
+			"image" : "block_background_clone"
+		}
+	},
+	"scripts" :  [
+		"controller.py"
+	]
+}

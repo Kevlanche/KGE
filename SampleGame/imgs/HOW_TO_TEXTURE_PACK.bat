@@ -1,0 +1,1 @@
+java -cp libs/gdx.jar;libs/gdx-tools/gdx-tools.jar com.badlogic.gdx.tools.imagepacker.TexturePacker2 src gen pack

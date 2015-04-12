@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.kevlanche.engine.game.assets.UserStateDefinition;
 import com.kevlanche.engine.game.script.CompileException;
 import com.kevlanche.engine.game.script.CompiledScript;
 import com.kevlanche.engine.game.script.ReloadListener;
@@ -67,13 +68,21 @@ public class BaseEntity implements Entity {
 
 	private final List<EntityListener> mListeners;
 
-	public BaseEntity(Entity parent) {
+	private final String mClassName;
+
+	public BaseEntity(String className, Entity parent) {
+		mClassName = className;
 		mScripts = new CopyOnWriteArrayList<>();
 		mStack = new LinkedList<>();
 		mCurrentState = new ActiveState();
 		mChildren = new CopyOnWriteArrayList<>();
 		mParent = parent;
 		mListeners = new CopyOnWriteArrayList<>();
+	}
+
+	@Override
+	public String getClassName() {
+		return mClassName;
 	}
 
 	@Override
@@ -146,15 +155,27 @@ public class BaseEntity implements Entity {
 		return ret;
 	}
 
-	@Override
-	public void addState(State state) {
+	protected void addPermanentState(State state) {
 		mCurrentState.states.add(state);
 		notifyChange();
 	}
 
 	@Override
+	public void addUserState(UserStateDefinition state) {
+		mCurrentState.states.add(state.createInstance());
+		notifyChange();
+	}
+
+	@Override
+	public void removeUserState(UserStateDefinition.Instance state) {
+		if (mCurrentState.states.remove(state)) {
+			notifyChange();
+		}
+	}
+
+	@Override
 	public List<State> getStates() {
-		return mCurrentState.states;
+		return new ArrayList<>(mCurrentState.states);
 	}
 
 	@Override

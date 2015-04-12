@@ -36,13 +36,15 @@ import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.GameStateObserverAdapter;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.actor.EntityListener;
+import com.kevlanche.engine.game.assets.StateDefinition;
+import com.kevlanche.engine.game.assets.UserStateDefinition;
 import com.kevlanche.engine.game.script.Script;
-import com.kevlanche.engine.game.script.ScriptProvider;
+import com.kevlanche.engine.game.script.ScriptDefinition;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.StateUtil;
-import com.kevlanche.engine.game.state.StateUtil.FoundState;
-import com.kevlanche.engine.game.state.var.ValueType;
-import com.kevlanche.engine.game.state.var.Variable;
+import com.kevlanche.engine.game.state.StateUtil.OwnedState;
+import com.kevlanche.engine.game.state.value.ValueType;
+import com.kevlanche.engine.game.state.value.variable.Variable;
 
 @SuppressWarnings("serial")
 public class RightPanel extends BasePanel implements EntityListener {
@@ -62,12 +64,47 @@ public class RightPanel extends BasePanel implements EntityListener {
 		add(mAttributeHolder, BorderLayout.NORTH);
 
 		final JPanel btnPanel = new JPanel(new BorderLayout());
-		final JButton add = new JButton("+");
-		add.addActionListener(new ActionListener() {
+
+		final JButton addState = new JButton("+State");
+		addState.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final List<Script> availScripts = mState.getAssetProvider().getScripts();
+				final List<StateDefinition> availStates = mState
+						.getAssetProvider().getAvailableStates();
+
+				if (availStates.isEmpty()) {
+					return;
+				}
+
+				final Entity focus = mState.getCurrentSelection();
+
+				if (focus == null) {
+					return;
+				}
+				final UserStateDefinition[] opts = availStates
+						.toArray(new UserStateDefinition[availStates.size()]);
+
+				final int sel = JOptionPane.showOptionDialog(RightPanel.this,
+						"What state should be added?", "Add state",
+						JOptionPane.DEFAULT_OPTION,
+						JOptionPane.QUESTION_MESSAGE, null, opts, opts[0]);
+
+				if (sel >= 0 && sel < opts.length) {
+					focus.addUserState(opts[sel]);
+					mState.triggerOnChanged();
+				}
+			}
+		});
+		btnPanel.add(addState, BorderLayout.WEST);
+
+		final JButton addScript = new JButton("+Script");
+		addScript.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				final List<ScriptDefinition> availScripts = mState
+						.getAssetProvider().getScripts();
 
 				if (availScripts.isEmpty()) {
 					return;
@@ -88,19 +125,24 @@ public class RightPanel extends BasePanel implements EntityListener {
 
 				if (sel >= 0 && sel < opts.length) {
 					focus.addScript(opts[sel]);
-					// focus.addScript("pythonTest", opts[sel]);
 					mState.triggerOnChanged();
 				}
 			}
 		});
-		btnPanel.add(add, BorderLayout.CENTER);
+		btnPanel.add(addScript, BorderLayout.EAST);
 		add(btnPanel, BorderLayout.SOUTH);
 
 		state.addObserver(new GameStateObserverAdapter() {
 
 			@Override
 			public void onGenericChange() {
-				buildUi();
+				SwingUtilities.invokeLater(new Runnable() {
+
+					@Override
+					public void run() {
+						buildUi();
+					}
+				});
 			}
 		});
 		buildUi();
@@ -111,7 +153,7 @@ public class RightPanel extends BasePanel implements EntityListener {
 			mPoller.stop();
 		}
 		mAttributeHolder.removeAll();
-		
+
 		if (mLastEntity != null) {
 			mLastEntity.removeListener(this);
 		}
@@ -139,15 +181,15 @@ public class RightPanel extends BasePanel implements EntityListener {
 				1.0, 1.0, GridBagConstraints.NORTHWEST,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 5, 5);
 
-		List<FoundState> availStates = StateUtil.recursiveFindStates(actor);
-		for (FoundState fs : availStates) {
+		List<OwnedState> availStates = StateUtil.recursiveFindStates(actor);
+		for (OwnedState fs : availStates) {
 			if (fs.owner == actor) {
 				addState(rootGbc, fs.state);
 			}
 		}
 		mAttributeHolder.add(new JSeparator(), rootGbc);
 		rootGbc.gridy++;
-		for (FoundState fs : availStates) {
+		for (OwnedState fs : availStates) {
 			if (fs.owner != actor) {
 				addState(rootGbc, fs.state);
 			}
@@ -210,7 +252,6 @@ public class RightPanel extends BasePanel implements EntityListener {
 		List<Component> fields = new ArrayList<>();
 		AtomicBoolean ignoreUpdates = new AtomicBoolean(false);
 		for (final Variable var : vars) {
-
 			final Component editor;
 
 			if (var.getType() == ValueType.BOOL) {
@@ -342,7 +383,7 @@ public class RightPanel extends BasePanel implements EntityListener {
 
 		mAttributeHolder.add(instanceHolder, rootGbc);
 		rootGbc.gridy++;
-		
+
 		revalidate();
 		repaint();
 	}

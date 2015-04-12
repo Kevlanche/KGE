@@ -1,10 +1,11 @@
 package com.kevlanche.engine.game.state.impl;
 
 import com.kevlanche.engine.game.state.JavaState;
-import com.kevlanche.engine.game.state.var.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.FloatVariable;
 
 public class Rotation extends JavaState {
 
+	public static final String NAME = "rotation";
 	public final FloatVariable degrees, anchorX, anchorY;
 
 	public Rotation() {
@@ -18,7 +19,7 @@ public class Rotation extends JavaState {
 
 	public Rotation(Degrees degrees, FloatVariable anchorX,
 			FloatVariable anchorY) {
-		super("degrees");
+		super(NAME);
 
 		this.degrees = register(degrees);
 		this.anchorX = register(anchorX);
@@ -28,7 +29,7 @@ public class Rotation extends JavaState {
 	public static class Degrees extends FloatVariable {
 
 		public Degrees() {
-			super("degrees", 0);
+			super(NAME, 0);
 		}
 	}
 

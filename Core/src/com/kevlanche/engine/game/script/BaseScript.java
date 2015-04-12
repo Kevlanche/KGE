@@ -7,7 +7,10 @@ public abstract class BaseScript implements Script {
 
 	private final List<ReloadListener> mListeners;
 
-	public BaseScript() {
+	private final String mName;
+
+	public BaseScript(String name) {
+		mName = name;
 		mListeners = new CopyOnWriteArrayList<>();
 	}
 
@@ -17,6 +20,11 @@ public abstract class BaseScript implements Script {
 		}
 	}
 
+	@Override
+	public String getName() {
+		return mName;
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */

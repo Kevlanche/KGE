@@ -1,6 +1,5 @@
 package com.kevlanche.engine.game;
 
-import java.io.File;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -8,6 +7,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import com.kevlanche.engine.game.actor.Entity;
+import com.kevlanche.engine.game.actor.EntityDefinition;
 import com.kevlanche.engine.game.assets.AssetProvider;
 import com.kevlanche.engine.game.script.CompileException;
 
@@ -141,4 +141,9 @@ public class GameState {
 		}
 	}
 
+	public void clearEntities() {
+		while (!mAllActors.isEmpty()) {
+			removeEntity(mAllActors.get(0));
+		}
+	}
 }

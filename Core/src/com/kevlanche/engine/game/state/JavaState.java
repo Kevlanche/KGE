@@ -1,18 +1,20 @@
 package com.kevlanche.engine.game.state;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.script.CompileException;
-import com.kevlanche.engine.game.state.var.Variable;
+import com.kevlanche.engine.game.state.value.variable.ObservableVariable;
+import com.kevlanche.engine.game.state.value.variable.Variable;
 
-public abstract class JavaState implements State {
+public class JavaState implements ObservableState,
+		ObservableVariable.ChangeListener {
 
 	protected final List<Variable> mVars = new ArrayList<>();
 
 	private final String mName;
+	private long mLastModified;
 
 	public JavaState(String name) {
 		mName = name;
@@ -23,15 +25,6 @@ public abstract class JavaState implements State {
 		return new ArrayList<>(mVars);
 	}
 
-	//
-	// @Override
-	// public State<Type> compile(Actor owner) throws CompileException {
-	// final JavaState ret = new JavaState(mName);
-	// for (ClonableVariable var : mVars) {
-	// ret.register(var.copy());
-	// }
-	// return ret;
-	// }
 	@Override
 	public State compile(Entity owner) throws CompileException {
 		// Type ret = newInstance();
@@ -47,10 +40,25 @@ public abstract class JavaState implements State {
 		return mName;
 	}
 
-	protected <T extends Variable> T register(T var) {
+	protected <T extends ObservableVariable> T register(T var) {
+		onChanged();
 		mVars.add(var);
-
+		var.setChangeListener(this);
 		return var;
+	}
+
+	@Override
+	public void onChanged(ObservableVariable var) {
+		onChanged();
+	}
+
+	private void onChanged() {
+		mLastModified = System.currentTimeMillis();
+	}
+
+	@Override
+	public long getLastModified() {
+		return mLastModified;
 	}
 
 	@Override
@@ -58,6 +66,8 @@ public abstract class JavaState implements State {
 		for (Variable var : mVars) {
 			var.saveState();
 		}
+		onChanged();
+
 	}
 
 	@Override
@@ -65,18 +75,16 @@ public abstract class JavaState implements State {
 		for (Variable var : mVars) {
 			var.restoreState();
 		}
+		onChanged();
 	}
 
-	// @Override
-	// public CompiledScript createInstance(ScriptOwner context) {
-	// try {
-	// return mInstanceClass.getDeclaredConstructor(getClass())
-	// .newInstance(this);
-	// } catch (InstantiationException | IllegalAccessException
-	// | IllegalArgumentException | InvocationTargetException
-	// | NoSuchMethodException | SecurityException e) {
-	// e.printStackTrace();
-	// throw new IllegalArgumentException();
-	// }
-	// }
+	@Override
+	public String toString() {
+		return mName + ": " + mVars;
+	}
+	
+	@Override
+	public boolean canBeShared() {
+		return false;
+	}
 }
