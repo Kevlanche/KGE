@@ -1,18 +1,19 @@
 package com.kevlanche.engine.game.state;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import com.kevlanche.engine.game.GameState;
 import com.kevlanche.engine.game.actor.Entity;
 import com.kevlanche.engine.game.script.CompileException;
-import com.kevlanche.engine.game.state.value.variable.ObservableVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedVariable;
+import com.kevlanche.engine.game.state.value.variable.ObservableVariable;
 
 public class JavaState implements ObservableState,
 		ObservableVariable.ChangeListener {
 
-	protected final List<NamedVariable> mVars = new ArrayList<>();
+	protected final Map<String,NamedVariable> mVars = new HashMap<>();
 
 	private final String mName;
 	private long mLastModified;
@@ -22,8 +23,12 @@ public class JavaState implements ObservableState,
 	}
 
 	@Override
-	public List<NamedVariable> getVariables() {
-		return new ArrayList<>(mVars);
+	public NamedVariable get(String key) {
+		return mVars.get(key);
+	}
+	@Override
+	public Set<String> keySet() {
+		return mVars.keySet();
 	}
 
 	@Override
@@ -43,7 +48,7 @@ public class JavaState implements ObservableState,
 
 	protected <T extends NamedVariable> T register(T var) {
 		onChanged();
-		mVars.add(var);
+		mVars.put(var.getName(), var);
 		var.setChangeListener(this);
 		return var;
 	}
@@ -64,7 +69,7 @@ public class JavaState implements ObservableState,
 
 	@Override
 	public void saveState() {
-		for (NamedVariable var : mVars) {
+		for (NamedVariable var : mVars.values()) {
 			var.saveState();
 		}
 		onChanged();
@@ -73,7 +78,7 @@ public class JavaState implements ObservableState,
 
 	@Override
 	public void restoreState() {
-		for (NamedVariable var : mVars) {
+		for (NamedVariable var : mVars.values()) {
 			var.restoreState();
 		}
 		onChanged();

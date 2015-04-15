@@ -1,4 +1,9 @@
 {
 	"board" : [],
-	"__shared" : true
+	"__shared" : true,
+	"amap" : {
+		"pneis" : 123
+		},
+
+	"movePlayer()" : "Move a player"
 }

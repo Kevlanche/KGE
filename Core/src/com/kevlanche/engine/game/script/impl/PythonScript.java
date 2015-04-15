@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.python.core.Py;
 import org.python.core.PyDictionary;
@@ -33,9 +35,13 @@ import com.kevlanche.engine.game.state.ObservableState;
 import com.kevlanche.engine.game.state.State;
 import com.kevlanche.engine.game.state.StateUtil;
 import com.kevlanche.engine.game.state.StateUtil.OwnedState;
+import com.kevlanche.engine.game.state.value.Function;
+import com.kevlanche.engine.game.state.value.ValueMap;
 import com.kevlanche.engine.game.state.value.variable.ArrayVariable;
 import com.kevlanche.engine.game.state.value.variable.FloatVariable;
+import com.kevlanche.engine.game.state.value.variable.FunctionVariable;
 import com.kevlanche.engine.game.state.value.variable.IntVariable;
+import com.kevlanche.engine.game.state.value.variable.MapVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedVariable;
 import com.kevlanche.engine.game.state.value.variable.StringVariable;
 import com.kevlanche.engine.game.state.value.variable.Variable;
@@ -62,12 +68,7 @@ public class PythonScript extends BaseScript {
 		}
 
 		private NamedVariable findVar(String name) {
-			for (NamedVariable var : owner.getVariables()) {
-				if (var.getName().equals(name)) {
-					return var;
-				}
-			}
-			return null;
+			return owner.get(name);
 		}
 
 		@Override
@@ -98,16 +99,6 @@ public class PythonScript extends BaseScript {
 		private DerivedArray(PyType subtype, Variable owner) {
 			super(subtype);
 			this.owner = owner;
-		}
-
-		@Override
-		public PyObject __findattr_ex__(String name) {
-			NamedVariable var = findVar(name);
-			if (var != null) {
-				return Py.getAdapter().adapt(var);
-			} else {
-				return null;
-			}
 		}
 
 		@Override
@@ -172,21 +163,45 @@ public class PythonScript extends BaseScript {
 			return super.__finditem__(arg0);
 		}
 
-		private NamedVariable findVar(String name) {
-			// for (NamedVariable var : owner.getVariables()) {
-			// if (var.getName().equals(name)) {
-			// return var;
-			// }
-			// }
-			return null;
+		@Override
+		protected synchronized Object getJavaProxy() {
+			// Have to override this or we get a really strange
+			// error
+			// http://bugs.jython.org/issue1551
+			return this;
 		}
 
 		@Override
-		public void __setattr__(String name, PyObject value) {
-			NamedVariable var = findVar(name);
-			if (var != null) {
-				setVar(var, value);
+		public String toString() {
+			return "arraywraoppoerr " + owner.toString();
+		}
+	}
+
+	private static final class DerivedFunction extends PyTypeDerived {
+		private final Variable owner;
+
+		private DerivedFunction(PyType subtype, Variable owner) {
+			super(subtype);
+			this.owner = owner;
+		}
+
+		@Override
+		public PyObject __call__(PyObject[] args, String[] keywords) {
+			final Variable[] vals = new Variable[args.length];
+			for (int i = 0; i < vals.length; i++) {
+				vals[i] = toVariable(args[i]);
 			}
+			return Py.getAdapter().adapt(owner.asFunction().call(vals));
+		}
+
+		@Override
+		public void __setitem__(PyObject key, PyObject value) {
+			if (key instanceof PyInteger) {
+				final Variable raw = owner.asArray()[key.asInt()];
+				setVar(raw, value);
+				return;
+			}
+			super.__setitem__(key, value);
 		}
 
 		@Override
@@ -199,7 +214,7 @@ public class PythonScript extends BaseScript {
 
 		@Override
 		public String toString() {
-			return "arraywraoppoerr " + owner.toString();
+			return "DerivedFunction " + owner.toString();
 		}
 	}
 
@@ -279,7 +294,13 @@ public class PythonScript extends BaseScript {
 				case ARRAY:
 					ret = new DerivedArray(PyType.fromClass(owner.getClass(),
 							true), owner);
-					// ret = Py.getAdapter().adapt(owner.asArray());
+					break;
+				case FUNCTION:
+					ret = new DerivedFunction(PyType.fromClass(
+							owner.getClass(), true), owner);
+					break;
+				case MAP:
+					ret = Py.getAdapter().adapt(owner.asMap());
 					break;
 				default:
 					System.err.println("Attempted to write illegal type \""
@@ -301,6 +322,27 @@ public class PythonScript extends BaseScript {
 			}
 		} else if (var instanceof String) {
 			return new StringVariable((String) var);
+		} else if (var instanceof Function) {
+			return new FunctionVariable((Function) var);
+		} else if (var instanceof ValueMap) {
+			return new MapVariable((ValueMap) var);
+		} else if (var instanceof Map<?, ?>) {
+			final Map<String, Object> map = (Map<String, Object>) var;
+			return new MapVariable(new ValueMap() {
+
+				@Override
+				public Set<String> keySet() {
+					return map.keySet();
+				}
+
+				@Override
+				public Variable get(String key) {
+					return toVariable(map.get(key));
+				}
+			});
+		} else if (var instanceof DerivedState) {
+			DerivedState ds = (DerivedState) var;
+			return new MapVariable(ds.owner);
 		} else if (var instanceof PyObject) {
 			PyObject po = (PyObject) var;
 
@@ -318,6 +360,20 @@ public class PythonScript extends BaseScript {
 					arr[i] = conv;
 				}
 				return new ArrayVariable(arr);
+			} else if (po.isCallable()) {
+				return new FunctionVariable(new Function() {
+
+					@Override
+					public Object call(Variable... args) {
+						final PyObject[] pyArgs = new PyObject[args.length];
+						for (int i = 0; i < pyArgs.length; i++) {
+							pyArgs[i] = Py.getAdapter().adapt(args[i]);
+						}
+						return po.__call__(pyArgs);
+					}
+				});
+			} else if (po.isMappingType()) {
+				System.out.println("???");
 			} else {
 				return new StringVariable(po.asString());
 			}

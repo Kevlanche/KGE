@@ -6,5 +6,7 @@ public enum ValueType {
 	STRING,
 	BOOL,
 	DRAWABLE,
-	ARRAY
+	ARRAY,
+	FUNCTION,
+	MAP
 }

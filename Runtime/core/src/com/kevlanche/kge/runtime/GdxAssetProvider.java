@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Timer;
@@ -48,14 +49,19 @@ import com.kevlanche.engine.game.state.impl.Physics;
 import com.kevlanche.engine.game.state.impl.Rendering;
 import com.kevlanche.engine.game.state.impl.Rendering.DrawableSrc;
 import com.kevlanche.engine.game.state.impl.Transform;
+import com.kevlanche.engine.game.state.value.Function;
 import com.kevlanche.engine.game.state.value.Value;
+import com.kevlanche.engine.game.state.value.ValueMap;
 import com.kevlanche.engine.game.state.value.variable.ArrayVariable;
 import com.kevlanche.engine.game.state.value.variable.BoolVariable;
 import com.kevlanche.engine.game.state.value.variable.FloatVariable;
 import com.kevlanche.engine.game.state.value.variable.IntVariable;
+import com.kevlanche.engine.game.state.value.variable.MapVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedArrayVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedFloatVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedFunctionVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedIntVariable;
+import com.kevlanche.engine.game.state.value.variable.NamedMapVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedStringVariable;
 import com.kevlanche.engine.game.state.value.variable.NamedVariable;
 import com.kevlanche.engine.game.state.value.variable.StringVariable;
@@ -128,7 +134,8 @@ public class GdxAssetProvider implements AssetProvider {
 
 				boolean started = false;
 
-				for (NamedVariable var : state.getVariables()) {
+				for (String varName : state.keySet()) {
+					final NamedVariable var = state.get(varName);
 					if (!var.hasDefaultValue()) {
 						if (!started) {
 							started = true;
@@ -217,6 +224,42 @@ public class GdxAssetProvider implements AssetProvider {
 
 			@Override
 			public List<String> getRequiredStates() {
+				return Arrays.asList(Transform.NAME, Rendering.NAME);
+			}
+
+			@Override
+			public List<String> getRequiredScripts() {
+				return null;
+			}
+
+			@Override
+			public String getParentClass() {
+				return null;
+			}
+
+			@Override
+			public String getClassName() {
+				return "base";
+			}
+
+			@Override
+			public String toString() {
+				return getClassName();
+			}
+
+			@Override
+			public List<EntityDefinition> getChildren() {
+				return null;
+			}
+		});
+		mClassDefinitions.add(new EntityDefinition() {
+
+			@Override
+			public void setDefaultParameters(Entity entity) {
+			}
+
+			@Override
+			public List<String> getRequiredStates() {
 				return Arrays.asList(Physics.NAME);
 			}
 
@@ -246,42 +289,6 @@ public class GdxAssetProvider implements AssetProvider {
 			}
 		});
 
-		mClassDefinitions.add(new EntityDefinition() {
-
-			@Override
-			public void setDefaultParameters(Entity entity) {
-			}
-
-			@Override
-			public List<String> getRequiredStates() {
-				return Arrays.asList(Transform.NAME, Rendering.NAME);
-			}
-
-			@Override
-			public List<String> getRequiredScripts() {
-				return null;
-			}
-
-			@Override
-			public String getParentClass() {
-				return null;
-			}
-
-			@Override
-			public String getClassName() {
-				return "base";
-			}
-
-			@Override
-			public String toString() {
-				return getClassName();
-			}
-
-			@Override
-			public List<EntityDefinition> getChildren() {
-				return null;
-			}
-		});
 	}
 
 	public void doLoad() {
@@ -297,11 +304,49 @@ public class GdxAssetProvider implements AssetProvider {
 
 		loadScripts();
 
-		loadClasses();
-
 		loadStates();
 
 		loadLevels();
+
+		loadClasses();
+
+		ClassTree tree = new ClassTree(mClassDefinitions.get(0));
+		buildTree(tree);
+
+		tree.print(0);
+	}
+
+	private void buildTree(ClassTree tree) {
+		final String treeName = tree.mDef.getClassName();
+		for (EntityDefinition def : mClassDefinitions) {
+			final String parCls = def.getParentClass();
+			if (parCls != null && parCls.equals(treeName)) {
+				final ClassTree child = new ClassTree(def);
+				tree.mChildren.add(child);
+				buildTree(child);
+			}
+		}
+	}
+
+	private class ClassTree {
+		private final EntityDefinition mDef;
+		private final List<ClassTree> mChildren;
+
+		public ClassTree(EntityDefinition def) {
+			mDef = def;
+			mChildren = new ArrayList<>();
+		}
+
+		public void print(int indent) {
+			for (int i = 0; i < indent; i++) {
+				System.out.print(" ");
+			}
+			System.out.println(mDef.getClassName());
+			for (ClassTree child : mChildren) {
+				child.print(indent + 1);
+			}
+
+		}
 	}
 
 	@Override
@@ -362,13 +407,14 @@ public class GdxAssetProvider implements AssetProvider {
 				if (fileName.endsWith(".json")) {
 
 					final JsonValue val = reader.parse(new FileHandle(file));
-					final List<NamedVariable> vars = parseUserState(val);
+					final List<NamedVariable> vars = parseNamedVariables(val);
 
 					if (vars.isEmpty()) {
 						System.err.println("No variables in " + file + "?");
 					} else {
 						final String stateName = fileName.substring(0,
 								fileName.indexOf('.'));
+
 						final boolean canBeShared = val.getBoolean("__shared",
 								false);
 
@@ -387,7 +433,7 @@ public class GdxAssetProvider implements AssetProvider {
 							@Override
 							public Instance createInstance() {
 								return new UserStateInstance(stateName,
-										parseUserState(val)) {
+										parseNamedVariables(val)) {
 
 									@Override
 									public boolean canBeShared() {
@@ -526,12 +572,11 @@ public class GdxAssetProvider implements AssetProvider {
 							for (Entry<String, Value> defVal : vs.defaultValues
 									.entrySet()) {
 								final String attrName = defVal.getKey();
-								for (NamedVariable stateVar : state
-										.getVariables()) {
-									if (stateVar.getName().equals(attrName)) {
-										stateVar.copy(defVal.getValue());
-										break;
-									}
+
+								final NamedVariable stateVar = state
+										.get(attrName);
+								if (stateVar != null) {
+									stateVar.copy(defVal.getValue());
 								}
 							}
 							continue;
@@ -576,6 +621,26 @@ public class GdxAssetProvider implements AssetProvider {
 		};
 	}
 
+	private ValueMap toMap(JsonValue value) {
+		final List<NamedVariable> namedVars = parseNamedVariables(value);
+		final Map<String, Variable> map = new HashMap<>();
+		for (NamedVariable namedVar : namedVars) {
+			map.put(namedVar.getName(), namedVar);
+		}
+		return new ValueMap() {
+
+			@Override
+			public Set<String> keySet() {
+				return map.keySet();
+			}
+
+			@Override
+			public Variable get(String key) {
+				return map.get(key);
+			}
+		};
+	}
+
 	private Variable toVariable(JsonValue var) {
 		if (var.isLong()) {
 			return new IntVariable(var.asInt());
@@ -591,18 +656,38 @@ public class GdxAssetProvider implements AssetProvider {
 				arr[i] = toVariable(var.get(i));
 			}
 			return new ArrayVariable(arr);
+		} else if (var.isObject()) {
+			return new MapVariable(toMap(var));
 		} else {
 			System.out.println("Unknown var type " + var);
 			return null;
 		}
 	}
 
-	private List<NamedVariable> parseUserState(JsonValue val) {
+	private List<NamedVariable> parseNamedVariables(JsonValue val) {
 		final List<NamedVariable> vars = new ArrayList<>();
 
 		for (JsonValue var : val.iterator()) {
+			if (var.name.startsWith("__")) {
+				continue;
+			}
+			if (var.name.endsWith("()")) {
+				final String withoutParen = var.name.substring(0,
+						var.name.length() - 2);
 
-			if (var.isLong()) {
+				vars.add(new NamedFunctionVariable(withoutParen,
+						new Function() {
+
+							@Override
+							public Object call(Variable... args) {
+								System.out.println("Placeholder for "
+										+ withoutParen + " called w/ "
+										+ Arrays.toString(args));
+								return null;
+							}
+						}));
+				continue;
+			} else if (var.isLong()) {
 				vars.add(new NamedIntVariable(var.name, var.asInt()));
 			} else if (var.isDouble()) {
 				vars.add(new NamedFloatVariable(var.name, var.asFloat()));
@@ -615,6 +700,8 @@ public class GdxAssetProvider implements AssetProvider {
 				} else {
 					vars.add(new NamedArrayVariable(var.name, arrVal.asArray()));
 				}
+			} else if (var.isObject()) {
+				vars.add(new NamedMapVariable(var.name, toMap(var)));
 			} else {
 				System.out.println("Unknown var type " + var);
 			}
@@ -681,8 +768,9 @@ public class GdxAssetProvider implements AssetProvider {
 						for (State entityState : loaded.getStates()) {
 							if (entityState.getName().equals(state.name)) {
 
-								for (NamedVariable var : entityState
-										.getVariables()) {
+								for (String varName : entityState.keySet()) {
+									final NamedVariable var = entityState
+											.get(varName);
 
 									final JsonValue defValue = state.get(var
 											.getName());

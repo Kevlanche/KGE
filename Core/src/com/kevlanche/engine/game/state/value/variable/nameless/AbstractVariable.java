@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.kevlanche.engine.game.assets.Drawable;
 import com.kevlanche.engine.game.state.value.AbstractValue;
+import com.kevlanche.engine.game.state.value.Function;
+import com.kevlanche.engine.game.state.value.ValueMap;
 import com.kevlanche.engine.game.state.value.Value;
 import com.kevlanche.engine.game.state.value.ValueType;
 import com.kevlanche.engine.game.state.value.variable.ObservableVariable;
@@ -70,6 +72,16 @@ public abstract class AbstractVariable extends AbstractValue implements
 	}
 
 	@Override
+	public void set(Function function) throws TypeException {
+		throw new TypeException();
+	}
+
+	@Override
+	public void set(ValueMap value) throws TypeException {
+		throw new TypeException();
+	}
+
+	@Override
 	public void copy(Value other) throws TypeException {
 		switch (getType()) {
 		case INTEGER:
@@ -93,6 +105,12 @@ public abstract class AbstractVariable extends AbstractValue implements
 			break;
 		case ARRAY:
 			set(other.asArray());
+			break;
+		case FUNCTION:
+			set(other.asFunction());
+			break;
+		case MAP:
+			set(other.asMap());
 			break;
 		default:
 			throw new TypeException("Don't know how to copy " + getType());
@@ -121,6 +139,12 @@ public abstract class AbstractVariable extends AbstractValue implements
 			break;
 		case ARRAY:
 			mStack.add(asArray());
+			break;
+		case FUNCTION:
+			mStack.add(asFunction());
+			break;
+		case MAP:
+			mStack.add(asMap());
 			break;
 		default:
 			throw new TypeException("Don't know how to save " + getType());
@@ -153,6 +177,12 @@ public abstract class AbstractVariable extends AbstractValue implements
 		case ARRAY:
 			set((Variable[]) toRestore);
 			break;
+		case FUNCTION:
+			set((Function) toRestore);
+			break;
+		case MAP:
+			set((ValueMap) toRestore);
+			break;
 		default:
 			throw new TypeException("Don't know how to save " + getType());
 		}
@@ -174,8 +204,17 @@ public abstract class AbstractVariable extends AbstractValue implements
 			return mDefaultValue.equals(asDrawable());
 		case ARRAY:
 			return mDefaultValue.equals(asArray());
+		case FUNCTION:
+			return mDefaultValue.equals(asFunction());
+		case MAP:
+			return mDefaultValue.equals(asMap());
 		default:
 			throw new TypeException("Don't know how to evaluate " + getType());
 		}
+	}
+
+	@Override
+	public String toString() {
+		return getType() + "=" + asString();
 	}
 }

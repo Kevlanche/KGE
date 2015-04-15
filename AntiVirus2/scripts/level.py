@@ -1,6 +1,7 @@
 from math import *
 from kge import *
 
+
 game = 0
 transform = 0
 camera = 0
@@ -8,22 +9,21 @@ camera = 0
 def create():
 	global game
 	game = owner.getState("game")
+	
 	global transform
 	transform = owner.getState("transform")
 	global camera
 	camera = owner.getState("camera")
 
+	game.movePlayer = movePlayer
+
 	owner.addChangeListener(transform, layout)
 	owner.addChangeListener(kge.graphics, layout)
-
-	for player in owner.getEntitiesWithType("player"):
-		owner.addChangeListener(player.getState("gamePosition"), lambda: playerMoved(player))
 
 	layout()
 
 	updateBoard()
 	dumpBoard()
-
 
 def updateBoard():
 	w = int(transform.width)
@@ -72,19 +72,17 @@ def clamp(val, minVal, maxVal):
 	return max(minVal, min(maxVal, val))
 
 
-def playerMoved(player):
-	pos = player.getState("gamePosition")
+
+def movePlayer(pos, dx, dy, amap = 0):
 	gx = pos.x
-	tx = pos.reqx
+	tx = gx + dx
 	gy = pos.y
-	ty = pos.reqy
+	ty = gy + dy
 
 	if tx < 0 or tx >= len(game.board):
-		pos.reqx = clamp(tx, 0, len(game.board)-1)
-		return
-	elif ty < 0 or ty >= len(game.board[tx]):
-		pos.reqy = clamp(ty, 0, len(game.board[tx])-1)
-		return
+		return False
+	elif ty < 0 or ty >= len(game.board[ty]):
+		return False
 
 	mvx = tx - gx
 	mvy = ty - gy
@@ -100,12 +98,12 @@ def playerMoved(player):
 					updateBoard()
 
 
-	if not emptyBoard(tx,ty):
-		pos.reqx = pos.x
-		pos.reqy = pos.y
-	else:
+	if emptyBoard(tx,ty):
 		pos.x = tx
 		pos.y = ty
+		return True
+	else:
+		return False
 
 
 def emptyBoard(x,y):

@@ -2,6 +2,8 @@ package com.kevlanche.engine.game.state.value.variable;
 
 import com.kevlanche.engine.game.actor.SaveStateable;
 import com.kevlanche.engine.game.assets.Drawable;
+import com.kevlanche.engine.game.state.value.Function;
+import com.kevlanche.engine.game.state.value.ValueMap;
 import com.kevlanche.engine.game.state.value.Value;
 
 public interface Variable extends Value, SaveStateable {
@@ -18,7 +20,11 @@ public interface Variable extends Value, SaveStateable {
 
 	void set(Variable[] value) throws TypeException;
 
+	void set(Function function) throws TypeException;
+
 	void copy(Value other) throws TypeException;
 
 	boolean hasDefaultValue();
+
+	void set(ValueMap value) throws TypeException;
 }

@@ -30,4 +30,14 @@ public abstract class AbstractValue implements Value {
 	public Variable[] asArray() throws TypeException {
 		throw new TypeException();
 	}
+	
+	@Override
+	public Function asFunction() throws TypeException {
+		throw new TypeException();
+	}
+	
+	@Override
+	public ValueMap asMap() throws TypeException {
+		throw new TypeException();
+	}
 }

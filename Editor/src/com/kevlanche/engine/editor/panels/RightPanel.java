@@ -248,7 +248,10 @@ public class RightPanel extends BasePanel implements EntityListener {
 				1.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 2, 5);
 
-		List<NamedVariable> vars = state.getVariables();
+		List<NamedVariable> vars = new ArrayList<>();
+		for (String varName : state.keySet()) {
+			vars.add(state.get(varName));
+		}
 		List<Component> fields = new ArrayList<>();
 		AtomicBoolean ignoreUpdates = new AtomicBoolean(false);
 		for (final NamedVariable var : vars) {

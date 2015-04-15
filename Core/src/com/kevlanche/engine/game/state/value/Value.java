@@ -18,5 +18,9 @@ public interface Value {
 
 	Variable[] asArray() throws TypeException;
 
+	Function asFunction() throws TypeException;
+
+	ValueMap asMap() throws TypeException;
+
 	ValueType getType();
 }
